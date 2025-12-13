@@ -81,7 +81,7 @@ internal void page_frames_init(multiboot_info_t *mbd)
 			uintptr_t end = start + length;
 #ifdef DEBUG_LOGGING
 			KERNEL_DEBUG_LOGGER(
-				"Found AVAILABLE RAM: 0x%x - 0x%x (Length: %u)",
+				"Found AVAILABLE RAM: 0x%x - 0x%x: %u bytes",
 				start, end, length);
 #endif
 
@@ -98,9 +98,9 @@ internal void page_frames_init(multiboot_info_t *mbd)
 		else {
 #ifdef DEBUG_LOGGING
 			KERNEL_DEBUG_LOGGER(
-				"Found RESERVED Region: 0x%x - 0x%x (Type: %d)",
+				"Found RESERVED Region: 0x%x - 0x%x",
 				entry->addr_low,
-				entry->addr_low + entry->len_low, entry->type);
+				entry->addr_low + entry->len_low);
 #endif
 		}
 
@@ -117,7 +117,7 @@ internal void page_frames_init(multiboot_info_t *mbd)
 
 #ifdef DEBUG_LOGGING
 	KERNEL_DEBUG_LOGGER(
-		" Protecting Kernel Memory: 0x%x - 0x%x (Pages %d to %d)",
+		"Protecting Kernel Memory: 0x%x - 0x%x (Pages %d to %d)",
 		k_start, k_end, start_idx, end_idx);
 #endif
 
@@ -128,7 +128,7 @@ internal void page_frames_init(multiboot_info_t *mbd)
 	}
 
 #ifdef DEBUG_LOGGING
-	KERNEL_DEBUG_LOGGER("Protecting Lower Memory (0x0 - 0x100000)");
+	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
 #endif
 	for (int i = 0; i < 256; i++) {
 		page_frames_state[i] = PAGE_STATE_USED;
@@ -151,7 +151,9 @@ internal page_frame_t kmalloc_frame_int(void)
 	while (page_frames_state[i] != PAGE_STATE_FREE) {
 		i++;
 		if (i == page_frames_len) {
+#ifdef DEBUG_LOGGING
 			KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
+#endif
 			return KMALLOC_FAILED_TO_ALLOCATE_ERR;
 		}
 	}

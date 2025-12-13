@@ -17,7 +17,7 @@ uint8_t inb(uint16_t port)
 void kernel_debug_logger(const char *filename, int line, const char *format,
 			 ...)
 {
-	printf("[%s:%d]: ", filename, line);
+	printf("%s:%d: ", filename, line);
 
 	va_list args;
 	va_start(args, format);
