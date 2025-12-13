@@ -10,9 +10,6 @@
 
 #define BATCH_PAGES_ALLOCED_MAX 20
 #define PAGES_PER_TABLE 1024
-#define PAGE_DIRECTORY_ENTRY_INIT 0x00000002
-
-#define ERROR 0xCAFEBABE
 
 typedef uintptr_t page_frame_t;
 
@@ -29,6 +26,7 @@ void paging_init(uint32_t magic, multiboot_info_t *mbd);
 
 void kfree_frame(page_frame_t a);
 
+#define KMALLOC_FAILED_TO_ALLOCATE_ERR 0xCAFEBABE
 page_frame_t kmalloc_frame(void);
 
 extern void _loadPageDirectory(uint32_t addr);

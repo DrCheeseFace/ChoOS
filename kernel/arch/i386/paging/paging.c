@@ -23,24 +23,26 @@ void paging_init(uint32_t magic, multiboot_info_t *mbd)
 	KERNEL_DEBUG_LOGGER("init paging");
 #endif
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
-		abort("ERROR: invalid memory map given by grub bootloader");
+		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: invalid memory map given by grub bootloader");
 	}
 
 	if (!(mbd->flags >> 6 & 0x1)) {
-		abort("ERROR: invalid memory map given by grub bootloader");
+		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: invalid memory map given by grub bootloader");
 	}
 
 	page_frames_init(mbd);
 
 	page_frame_t page_directory_phys = kmalloc_frame_int();
-	if (page_directory_phys == (page_frame_t)ERROR) {
-		abort("ERROR: failed to allocate frame for page directory");
+	if (page_directory_phys ==
+	    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
 	page_directory = (uint32_t *)page_directory_phys;
 
 	page_frame_t first_page_table_phys = kmalloc_frame_int();
-	if (first_page_table_phys == (page_frame_t)ERROR) {
-		abort("ERROR: failed to allocate frame for first page table");
+	if (first_page_table_phys ==
+	    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
 	uint32_t *first_page_table = (uint32_t *)first_page_table_phys;
 	for (uint16_t i = 0; i < PAGES_PER_TABLE; i++) {
@@ -150,7 +152,7 @@ internal page_frame_t kmalloc_frame_int(void)
 		i++;
 		if (i == page_frames_len) {
 			KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
-			return ERROR;
+			return KMALLOC_FAILED_TO_ALLOCATE_ERR;
 		}
 	}
 	page_frames_state[i] = PAGE_STATE_USED;
@@ -180,7 +182,12 @@ page_frame_t kmalloc_frame(void)
 
 	if (allocate == 1) {
 		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			pre_frames[i] = kmalloc_frame_int();
+			page_frame_t frame = kmalloc_frame_int();
+			if (frame ==
+			    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+				abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame in kmalloc_frame");
+			}
+			pre_frames[i] = frame;
 		}
 		pframe = 0;
 		allocate = 0;
