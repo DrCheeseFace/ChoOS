@@ -13,7 +13,7 @@ global_variable idt_entry_t idt_entries[IDT_MAX_DESCRIPTORS];
 global_variable idtr_t idt_ptr;
 void (*irq_routines[16])(struct interrupt_resigters *) = { 0 };
 
-extern void idt_flush(uint32_t);
+extern void _idt_flush(uint32_t);
 
 const char *exception_messages[] = { "division by zero",
 				     "debug",
@@ -194,7 +194,7 @@ void idt_init(void)
 	outb(PIT_CH0_DATA_PORT, 0x0); // sending 0 treated as 65536
 	outb(PIT_CH0_DATA_PORT, 0x0); // sending 0 treated as 65536
 
-	idt_flush((uint32_t)&idt_ptr);
+	_idt_flush((uint32_t)&idt_ptr);
 
 #ifdef DEBUG_LOGGING
 	printf("init idt OK\n");

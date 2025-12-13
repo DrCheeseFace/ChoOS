@@ -4,8 +4,8 @@
 #include <stdio.h>
 #include <string.h>
 
-extern void gdt_flush(uint32_t);
-extern void tss_flush(uint32_t);
+extern void _gdt_flush(uint32_t);
+extern void _tss_flush(uint32_t);
 
 global_variable gdt_entry_t gdt_entries[GDT_SEGMENT_COUNT];
 global_variable gdtr_t gdt_ptr;
@@ -36,9 +36,9 @@ void gdt_init(void)
 
 	tss_write(GDT_SEGMENT_TSS, GDT_SEL_KDATA, 0x0);
 
-	gdt_flush((uint32_t)&gdt_ptr);
+	_gdt_flush((uint32_t)&gdt_ptr);
 
-	tss_flush((uint32_t)&tss_entry);
+	_tss_flush((uint32_t)&tss_entry);
 
 #ifdef DEBUG_LOGGING
 	printf("init gdt OK\n");

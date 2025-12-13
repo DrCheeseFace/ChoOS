@@ -1,7 +1,7 @@
-.global gdt_flush
-.type gdt_flush, @function
+.global _gdt_flush
+.type _gdt_flush, @function
 
-gdt_flush:
+_gdt_flush:
     mov 4(%esp), %eax
     lgdt (%eax)
 

@@ -10,7 +10,7 @@
 - [x] timer interrupts
 - [x] keyboard interrupts
 - [x] enable paging
-- [ ] replace nasm with just S cuz why do both lol
+- [x] replace nasm with just S cuz why do both lol
 - [ ] bitmap to some other physical memory allocators
 - [ ] virtual memory management kmalloc, kfree, krealloc, kcalloc
 - [ ] can there be multile regions of free memory to allocate page frames for?

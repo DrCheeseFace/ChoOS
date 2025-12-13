@@ -1,7 +1,7 @@
-.global tss_flush
-.type tss_flush, @function
+.global _tss_flush
+.type _tss_flush, @function
 
-tss_flush:
+_tss_flush:
     movl $0x2B, %eax
     LTR %ax
     RET

@@ -15,7 +15,6 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	idt_init();
 	timer_init();
 	keyboard_init();
-
 	for (;;)
 		;
 }
