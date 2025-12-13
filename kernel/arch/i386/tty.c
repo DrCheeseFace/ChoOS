@@ -1,4 +1,5 @@
 #include "kernel/misc.h"
+#include "kernel/utils.h"
 #include <kernel/tty.h>
 #include <kernel/vga.h>
 
@@ -29,7 +30,7 @@ void tty_init(void)
 	}
 
 #ifdef DEBUG_LOGGING
-	printf("tty init OK\n");
+	KERNEL_DEBUG_LOGGER("tty init OK");
 #endif
 }
 

@@ -15,4 +15,9 @@ void outb(uint16_t port, uint8_t value);
 
 uint8_t inb(uint16_t port);
 
+void kernel_logger(const char *filename, int line, const char *format, ...);
+
+#define KERNEL_DEBUG_LOGGER(fmt, ...)                                          \
+	kernel_logger(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+
 #endif

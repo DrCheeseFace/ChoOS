@@ -55,6 +55,28 @@ char *itoa(int num, char *str, int base)
 	return str;
 }
 
+void utoa(unsigned int value, char *buffer, int base)
+{
+	char *ptr = buffer;
+	char *low = buffer;
+
+	do {
+		unsigned int mod = value % base;
+
+		*ptr++ = (mod < 10) ? (mod + '0') : (mod - 10 + 'a');
+
+		value /= base;
+	} while (value > 0);
+
+	*ptr-- = '\0';
+
+	while (low < ptr) {
+		char tmp = *low;
+		*low++ = *ptr;
+		*ptr-- = tmp;
+	}
+}
+
 static bool print(const char *data, size_t length)
 {
 	const unsigned char *bytes = (const unsigned char *)data;
@@ -64,11 +86,8 @@ static bool print(const char *data, size_t length)
 	return TRUE;
 }
 
-int printf(const char *restrict format, ...)
+int vprintf(const char *restrict format, va_list parameters)
 {
-	va_list parameters;
-	va_start(parameters, format);
-
 	int written = 0;
 
 	while (*format != '\0') {
@@ -127,6 +146,32 @@ int printf(const char *restrict format, ...)
 				return -1;
 			written += len;
 		}
+		else if (*format == 'u') {
+			format++;
+			unsigned int u = va_arg(parameters, unsigned int);
+			char str[32];
+			utoa(u, str, 10);
+			size_t len = strlen(str);
+			if (maxrem < len) {
+				return EOVERFLOW;
+			}
+			if (!print(str, len))
+				return -1;
+			written += len;
+		}
+		else if (*format == 'x') {
+			format++;
+			unsigned int u = va_arg(parameters, unsigned int);
+			char str[32];
+			utoa(u, str, 16);
+			size_t len = strlen(str);
+			if (maxrem < len) {
+				return EOVERFLOW;
+			}
+			if (!print(str, len))
+				return -1;
+			written += len;
+		}
 		else {
 			format = format_begun_at;
 			size_t len = strlen(format);
@@ -140,6 +185,15 @@ int printf(const char *restrict format, ...)
 		}
 	}
 
+	va_end(parameters);
+	return written;
+}
+
+int printf(const char *restrict format, ...)
+{
+	va_list parameters;
+	va_start(parameters, format);
+	int written = vprintf(format, parameters);
 	va_end(parameters);
 	return written;
 }

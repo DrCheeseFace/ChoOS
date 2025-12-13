@@ -1,3 +1,4 @@
+#include "kernel/utils.h"
 #include <kernel/gdt.h>
 #include <kernel/misc.h>
 
@@ -14,7 +15,7 @@ global_variable struct tss_entry tss_entry;
 void gdt_init(void)
 {
 #ifdef DEBUG_LOGGING
-	printf("init gdt\n");
+	KERNEL_DEBUG_LOGGER("init gdt");
 #endif
 
 	gdt_ptr.limit = sizeof(gdt_entries) - 1;
@@ -41,7 +42,7 @@ void gdt_init(void)
 	_tss_flush((uint32_t)&tss_entry);
 
 #ifdef DEBUG_LOGGING
-	printf("init gdt OK\n");
+	KERNEL_DEBUG_LOGGER("init gdt OK");
 #endif
 }
 

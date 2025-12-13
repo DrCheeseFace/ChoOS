@@ -278,7 +278,7 @@ void irq_1_handler(unused struct interrupt_resigters *regs);
 void keyboard_init(void)
 {
 #ifdef DEBUG_LOGGING
-	printf("initing keyboard input\n");
+	KERNEL_DEBUG_LOGGER("initing keyboard input");
 #endif
 
 	CTRL_pressed = FALSE;
@@ -288,7 +288,7 @@ void keyboard_init(void)
 	irq_install_handler(1, &irq_1_handler);
 
 #ifdef DEBUG_LOGGING
-	printf("initing keyboard OK\n");
+	KERNEL_DEBUG_LOGGER("initing keyboard OK");
 #endif
 }
 

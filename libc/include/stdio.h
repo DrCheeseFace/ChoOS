@@ -1,3 +1,4 @@
+#include <stdarg.h>
 #ifndef _STDIO_H
 #define _STDIO_H 1
 
@@ -11,6 +12,7 @@ extern "C" {
 #endif
 
 int printf(const char *__restrict, ...);
+int vprintf(const char *restrict format, va_list parameters);
 int putchar(int);
 int puts(const char *);
 

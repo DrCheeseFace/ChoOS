@@ -20,12 +20,8 @@ typedef uint8_t page_state_t;
 #define PAGE_STATE_FREE 0
 #define PAGE_STATE_USED 1
 
-struct page {
-	page_frame_t start;
-	uint32_t page_count;
-} __attribute__((packed));
-
 extern uint8_t endkernel[];
+extern uint8_t startkernel[];
 
 typedef multiboot_memory_map_t mmap_entry_t;
 

@@ -12,8 +12,8 @@ _idt_flush:
     .global isr\num
     isr\num:
         cli
-        pushl $0 
-        pushl $\num       
+        pushl $0
+        pushl $\num
         jmp _isr_common_stub
 .endm
 
@@ -21,7 +21,7 @@ _idt_flush:
     .global isr\num
     isr\num:
         cli
-        pushl $\num      
+        pushl $\num
         jmp _isr_common_stub
 .endm
 
@@ -29,8 +29,8 @@ _idt_flush:
     .global irq\index
     irq\index:
         cli
-        pushl $0        
-        pushl $\code   
+        pushl $0
+        pushl $\code
         jmp _irq_common_stub
 .endm
 
@@ -89,35 +89,35 @@ IRQ 15, 47
 
 .global _irq_common_stub
 _irq_common_stub:
-    pushal                 
-    
-    movl %ds, %eax        
-    pushl %eax           
-    
-    movl %cr2, %eax     
-    pushl %eax         
+    pushal
 
-    movw $0x10, %ax   
-    movw %ax, %ds    
+    movl %ds, %eax
+    pushl %eax
+
+    movl %cr2, %eax
+    pushl %eax
+
+    movw $0x10, %ax
+    movw %ax, %ds
     movw %ax, %es
     movw %ax, %fs
     movw %ax, %gs
 
-    pushl %esp      
+    pushl %esp
     call irq_handler
 
-    addl $8, %esp  
-    
-    popl %ebx     
+    addl $8, %esp
+
+    popl %ebx
     movw %bx, %ds
     movw %bx, %es
     movw %bx, %fs
     movw %bx, %gs
 
-    popal       
-    addl $8, %esp         
-    sti                  
-    iret                
+    popal
+    addl $8, %esp
+    sti
+    iret
 
 
 .global _isr_common_stub
