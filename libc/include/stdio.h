@@ -1,7 +1,9 @@
-#include <stdarg.h>
 #ifndef _STDIO_H
 #define _STDIO_H 1
 
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
 #include <sys/cdefs.h>
 
 #define EOF (-1)
