@@ -14,7 +14,8 @@ uint8_t inb(uint16_t port)
 	return ret;
 }
 
-void kernel_logger(const char *filename, int line, const char *format, ...)
+void kernel_debug_logger(const char *filename, int line, const char *format,
+			 ...)
 {
 	printf("[%s:%d]: ", filename, line);
 
