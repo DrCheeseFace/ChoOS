@@ -1,7 +1,7 @@
-.global _tbl_flush
-.type _tbl_flush, @function
+.global _tlb_flush
+.type _tlb_flush, @function
 
-_tbl_flush:
+_tlb_flush:
         movl 4(%esp), %eax
         invlpg (%eax)
         ret

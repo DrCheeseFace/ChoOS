@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <string.h>
 
-extern void _tbl_flush(uint32_t addr);
+extern void _tlb_flush(uint32_t addr);
 
 int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 {
@@ -28,9 +28,9 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 		uintptr_t page_table_virt_start =
 			(uintptr_t)GET_PTE_PTR(virt) & PAGE_MASK;
 #ifdef DEBUG_LOGGING
-		KERNEL_DEBUG_LOGGER("flushing TBL");
+		KERNEL_DEBUG_LOGGER("flushing TLB");
 #endif
-		_tbl_flush(page_table_virt_start);
+		_tlb_flush(page_table_virt_start);
 		memset((void *)page_table_virt_start, 0, PAGE_SIZE);
 	}
 
@@ -45,8 +45,8 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 #endif
 
 #ifdef DEBUG_LOGGING
-	KERNEL_DEBUG_LOGGER("flushing TBL");
+	KERNEL_DEBUG_LOGGER("flushing TLB");
 #endif
-	_tbl_flush(virt);
+	_tlb_flush(virt);
 	return 0;
 }
