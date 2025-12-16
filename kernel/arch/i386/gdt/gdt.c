@@ -2,7 +2,6 @@
 #include <kernel/gdt.h>
 #include <kernel/misc.h>
 
-#include <stdio.h>
 #include <string.h>
 
 extern void _gdt_flush(uint32_t);

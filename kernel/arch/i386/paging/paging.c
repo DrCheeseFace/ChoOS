@@ -7,17 +7,18 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 global_variable uint32_t *page_directory;
 global_variable page_state_t page_frames_state[MAX_PAGE_FRAME_COUNT];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
-global_variable page_frame_t pre_frames[BATCH_PAGES_ALLOCED_MAX];
+global_variable page_t pre_frames[BATCH_PAGES_ALLOCED_MAX];
 
-internal void page_frames_init(multiboot_info_t *mbd);
-internal page_frame_t kmalloc_frame_int(void);
+internal void pmm_frames_init(multiboot_info_t *mbd);
+internal page_t kmalloc_frame_int(void);
 
-void paging_init(uint32_t magic, multiboot_info_t *mbd)
+void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
 #ifdef DEBUG_LOGGING
 	KERNEL_DEBUG_LOGGER("init paging");
@@ -30,26 +31,33 @@ void paging_init(uint32_t magic, multiboot_info_t *mbd)
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: invalid memory map given by grub bootloader");
 	}
 
-	page_frames_init(mbd);
+	pmm_frames_init(mbd);
 
-	page_frame_t page_directory_phys = kmalloc_frame_int();
-	if (page_directory_phys ==
-	    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+	page_t page_directory_phys = kmalloc_frame_int();
+	if (page_directory_phys == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
 	page_directory = (uint32_t *)page_directory_phys;
 
-	page_frame_t first_page_table_phys = kmalloc_frame_int();
-	if (first_page_table_phys ==
-	    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+#ifdef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("memset'ing page_directory to zero");
+#endif
+	memset(page_directory, 0, PAGE_SIZE);
+
+	page_t first_page_table_phys = kmalloc_frame_int();
+	if (first_page_table_phys == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
 	uint32_t *first_page_table = (uint32_t *)first_page_table_phys;
 	for (uint16_t i = 0; i < PAGES_PER_TABLE; i++) {
-		first_page_table[i] = (i * PAGE_SIZE) | 3;
+		first_page_table[i] = (i * PAGE_SIZE) | PERMISSION_PRESENT_RW;
 	}
 
-	page_directory[0] = first_page_table_phys | 3;
+	page_directory[0] = first_page_table_phys | PERMISSION_PRESENT_RW;
+
+	// recursive mapping
+	page_directory[PAGE_DIRECTORY_LENGTH - 1] =
+		page_directory_phys | PERMISSION_PRESENT_RW;
 
 	_loadPageDirectory(page_directory_phys);
 	_enablePaging();
@@ -59,7 +67,7 @@ void paging_init(uint32_t magic, multiboot_info_t *mbd)
 #endif
 }
 
-internal void page_frames_init(multiboot_info_t *mbd)
+internal void pmm_frames_init(multiboot_info_t *mbd)
 {
 	for (int i = 0; i < MAX_PAGE_FRAME_COUNT; i++) {
 		page_frames_state[i] = PAGE_STATE_USED;
@@ -145,7 +153,7 @@ internal void page_frames_init(multiboot_info_t *mbd)
 #endif
 }
 
-internal page_frame_t kmalloc_frame_int(void)
+internal page_t kmalloc_frame_int(void)
 {
 	uint32_t i = 0;
 	while (page_frames_state[i] != PAGE_STATE_FREE) {
@@ -161,9 +169,9 @@ internal page_frame_t kmalloc_frame_int(void)
 	return (page_frames_start_addr + (i * PAGE_SIZE));
 }
 
-void kfree_frame(page_frame_t a)
+void kfree_frame(page_t a)
 {
-	page_frame_t offset = a - page_frames_start_addr;
+	page_t offset = a - page_frames_start_addr;
 
 	uint32_t index = ((uint32_t)offset) / PAGE_SIZE;
 
@@ -172,11 +180,11 @@ void kfree_frame(page_frame_t a)
 	}
 }
 
-page_frame_t kmalloc_frame(void)
+page_t kmalloc_page(void)
 {
 	local_persist uint8_t allocate = 1;
 	local_persist uint8_t pframe = 0;
-	page_frame_t ret;
+	page_t ret;
 
 	if (pframe == BATCH_PAGES_ALLOCED_MAX) {
 		allocate = 1;
@@ -184,9 +192,8 @@ page_frame_t kmalloc_frame(void)
 
 	if (allocate == 1) {
 		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			page_frame_t frame = kmalloc_frame_int();
-			if (frame ==
-			    (page_frame_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+			page_t frame = kmalloc_frame_int();
+			if (frame == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
 				abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame in kmalloc_frame");
 			}
 			pre_frames[i] = frame;

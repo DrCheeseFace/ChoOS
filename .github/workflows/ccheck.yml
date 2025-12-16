@@ -13,5 +13,5 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: clang-format check 
+    - name: clang-format check
       run: find -iname "*.c" -o -iname "*.h" | xargs clang-format --verbose --dry-run --Werror

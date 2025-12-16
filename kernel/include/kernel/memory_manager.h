@@ -4,26 +4,22 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-// enum mem_header_state {
-// 	MEM_HEADER_STATE_FREE = 0x01,
-// 	MEM_HEADER_STATE_USED,
-// };
-//
-// struct mem_header {
-// 	uint32_t size; // requested size
-// 	uint32_t actual_size; // upto page boundary
-// 	struct mem_header *next_free_block;
-// 	enum mem_header_state used;
-// }__attribute__((packed));
-//
-// #define MEMORY_MAP_START 0xDEADC0DE
-//
-// void *kmalloc(uint32_t size);
-//
-// // void *kcalloc(uint32_t size);
-// //
-// // void *krealloc(void* ptr);
-//
-// void kfree(void *ptr);
-//
+#define PT_BASE_VADDR 0xFFC00000 // start of the recursive area
+#define PD_BASE_VADDR                                                          \
+	0xFFFFF000 // start of the page directory mapped as a table
+
+// Get a pointer to a specific Page Table Entry
+// Usage: uint32_t *page_table_entry = GET_PTE_PTR(virt);
+// Returns a pointer you can read/write to modify the mapping for 'addr'
+#define GET_PTE_PTR(addr)                                                      \
+	((uint32_t *)(PT_BASE_VADDR + (((uint32_t)(addr) >> 12) * 4)))
+
+// Get a pointer to a specific Page Directory Entry
+// Usage: uint32_t *page_directory_entry = GET_PDE_PTR(virt);
+// Returns a pointer you can read/write to add/remove entire Page Tables
+#define GET_PDE_PTR(addr)                                                      \
+	((uint32_t *)(PD_BASE_VADDR + (((uint32_t)(addr) >> 22) * 4)))
+
+void vmm_map_page(uint32_t phys, uint32_t virt, uint32_t flags);
+
 #endif
