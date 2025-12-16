@@ -29,7 +29,7 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 
 int test_all(void)
 {
-	KERNEL_DEBUG_LOGGER("TEST: STARTING TESTS\n");
+	KERNEL_DEBUG_LOGGER("TEST: STARTING TESTS");
 	int err = 0;
 	err = err || test_vmm_aliasing();
 	return err;
