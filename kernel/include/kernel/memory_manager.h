@@ -4,6 +4,10 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef uintptr_t paddr_t;
+typedef uintptr_t vaddr_t;
+#define ENOMEM 12
+
 #define PT_BASE_VADDR 0xFFC00000 // start of the recursive area
 #define PD_BASE_VADDR                                                          \
 	0xFFFFF000 // start of the page directory mapped as a table
@@ -20,6 +24,8 @@
 #define GET_PDE_PTR(addr)                                                      \
 	((uint32_t *)(PD_BASE_VADDR + (((uint32_t)(addr) >> 22) * 4)))
 
-void vmm_map_page(uint32_t phys, uint32_t virt, uint32_t flags);
+// Returns 0 if ok
+// Returns ENOMEM if run out of memory
+int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags);
 
 #endif

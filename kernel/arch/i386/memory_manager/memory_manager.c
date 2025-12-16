@@ -7,33 +7,46 @@
 
 extern void _tbl_flush(uint32_t addr);
 
-void vmm_map_page(uint32_t phys, uint32_t virt, uint32_t flags)
+int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 {
-	uint32_t page_directory_index = virt >> 22;
-
-	uint32_t *page_directory_entry = GET_PDE_PTR(virt);
+	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
 
 	// create table
-	if ((*page_directory_entry & PAGE_NOT_PRESENT) == 0) {
-		page_t frame = kmalloc_page();
+	if (!page_directory_entry->present) {
+		page_t *new_frame = kmalloc_page();
+		if (new_frame == NULL) {
+			return ENOMEM;
+		}
+
 		// TODO change this to user accessable, writeable later
-		*page_directory_entry = frame | PERMISSION_PRESENT_RW;
+		page_directory_entry->frame =
+			((uintptr_t)new_frame) >> PAGE_SHIFT;
+		page_directory_entry->present = 1;
+		page_directory_entry->rw = 1;
+		page_directory_entry->user = 1;
+
+		uintptr_t page_table_virt_start =
+			(uintptr_t)GET_PTE_PTR(virt) & PAGE_MASK;
 #ifdef DEBUG_LOGGING
 		KERNEL_DEBUG_LOGGER("flushing TBL");
 #endif
-		_tbl_flush(PT_BASE_VADDR + (page_directory_index << 12));
-		uint32_t *pt_virtual =
-			(uint32_t *)(PT_BASE_VADDR +
-				     (page_directory_index << 12));
-		memset(pt_virtual, 0, PAGE_SIZE);
+		_tbl_flush(page_table_virt_start);
+		memset((void *)page_table_virt_start, 0, PAGE_SIZE);
 	}
 
-	uint32_t *page_table_entry = GET_PTE_PTR(virt);
-	*page_table_entry = phys | flags;
+	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
+	page_table_entry->frame = phys >> PAGE_SHIFT;
+	page_table_entry->present = 1;
+	page_table_entry->rw = (flags & 0x2) ? 1 : 0;
+	page_table_entry->user = (flags & 0x4) ? 1 : 0;
+
+#ifdef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("Mapped Virt 0x%x to Phys 0x%x", virt, phys);
+#endif
 
 #ifdef DEBUG_LOGGING
 	KERNEL_DEBUG_LOGGER("flushing TBL");
 #endif
 	_tbl_flush(virt);
-	return;
+	return 0;
 }

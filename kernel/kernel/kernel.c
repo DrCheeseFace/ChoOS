@@ -29,8 +29,7 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 
 int test_all(void)
 {
-	KERNEL_DEBUG_LOGGER("TEST: STARTING TESTS");
-	KERNEL_DEBUG_LOGGER("");
+	KERNEL_DEBUG_LOGGER("TEST: STARTING TESTS\n");
 	int err = 0;
 	err = err || test_vmm_aliasing();
 	return err;
@@ -40,13 +39,16 @@ int test_vmm_aliasing(void)
 {
 	KERNEL_DEBUG_LOGGER("TEST: VMM Aliasing... ");
 
-	uint32_t phys_frame = kmalloc_page();
+	page_t *phys_frame = kmalloc_page();
+	if (phys_frame == NULL) {
+		KERNEL_DEBUG_LOGGER("failed to allcoated page");
+	}
 
 	uint32_t virt_a = 0xD0000000;
 	uint32_t virt_b = 0xE0000000;
 
-	vmm_map_page(phys_frame, virt_a, 3);
-	vmm_map_page(phys_frame, virt_b, 3);
+	vmm_map_page((paddr_t)phys_frame, virt_a, 3);
+	vmm_map_page((paddr_t)phys_frame, virt_b, 3);
 
 	uint32_t *ptr_a = (uint32_t *)virt_a;
 	uint32_t *ptr_b = (uint32_t *)virt_b;

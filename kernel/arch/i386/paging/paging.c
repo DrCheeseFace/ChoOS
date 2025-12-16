@@ -5,18 +5,19 @@
 
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-global_variable uint32_t *page_directory;
+global_variable page_t *page_directory;
 global_variable page_state_t page_frames_state[MAX_PAGE_FRAME_COUNT];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
-global_variable page_t pre_frames[BATCH_PAGES_ALLOCED_MAX];
+global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
-internal page_t kmalloc_frame_int(void);
+internal page_t *kmalloc_frame_int(void);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
@@ -33,33 +34,44 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 	pmm_frames_init(mbd);
 
-	page_t page_directory_phys = kmalloc_frame_int();
-	if (page_directory_phys == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+	page_t *page_directory_phys = kmalloc_frame_int();
+	if (page_directory_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
-	page_directory = (uint32_t *)page_directory_phys;
+	page_directory = page_directory_phys;
 
 #ifdef DEBUG_LOGGING
 	KERNEL_DEBUG_LOGGER("memset'ing page_directory to zero");
 #endif
 	memset(page_directory, 0, PAGE_SIZE);
 
-	page_t first_page_table_phys = kmalloc_frame_int();
-	if (first_page_table_phys == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
+	page_t *first_page_table_phys = kmalloc_frame_int();
+	if (first_page_table_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
-	uint32_t *first_page_table = (uint32_t *)first_page_table_phys;
-	for (uint16_t i = 0; i < PAGES_PER_TABLE; i++) {
-		first_page_table[i] = (i * PAGE_SIZE) | PERMISSION_PRESENT_RW;
+	memset(first_page_table_phys, 0, PAGE_SIZE);
+
+	for (uint32_t i = 0; i < PAGES_PER_TABLE; i++) {
+		first_page_table_phys[i].frame = i;
+		first_page_table_phys[i].present = 1;
+		first_page_table_phys[i].rw = 1;
+		first_page_table_phys[i].user = 0;
 	}
 
-	page_directory[0] = first_page_table_phys | PERMISSION_PRESENT_RW;
+	page_directory[0].frame =
+		((uintptr_t)first_page_table_phys) >> PAGE_SHIFT;
+	page_directory[0].present = 1;
+	page_directory[0].rw = 1;
+	page_directory[0].user = 0;
 
 	// recursive mapping
-	page_directory[PAGE_DIRECTORY_LENGTH - 1] =
-		page_directory_phys | PERMISSION_PRESENT_RW;
+	page_directory[PAGE_DIRECTORY_LENGTH - 1].frame =
+		((uintptr_t)page_directory_phys) >> PAGE_SHIFT;
+	page_directory[PAGE_DIRECTORY_LENGTH - 1].present = 1;
+	page_directory[PAGE_DIRECTORY_LENGTH - 1].rw = 1;
+	page_directory[PAGE_DIRECTORY_LENGTH - 1].user = 0;
 
-	_loadPageDirectory(page_directory_phys);
+	_loadPageDirectory((uintptr_t)page_directory_phys);
 	_enablePaging();
 
 #ifdef DEBUG_LOGGING
@@ -153,25 +165,32 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 #endif
 }
 
-internal page_t kmalloc_frame_int(void)
+internal page_t *kmalloc_frame_int(void)
 {
-	uint32_t i = 0;
-	while (page_frames_state[i] != PAGE_STATE_FREE) {
-		i++;
-		if (i == page_frames_len) {
-#ifdef DEBUG_LOGGING
-			KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
-#endif
-			return KMALLOC_FAILED_TO_ALLOCATE_ERR;
+	size_t limit = (page_frames_len > MAX_PAGE_FRAME_COUNT) ?
+			       MAX_PAGE_FRAME_COUNT :
+			       page_frames_len;
+
+	for (size_t i = 0; i < limit; i++) {
+		if (page_frames_state[i] == PAGE_STATE_FREE) {
+			page_frames_state[i] = PAGE_STATE_USED;
+
+			uintptr_t frame_phys_addr =
+				page_frames_start_addr + (i * PAGE_SIZE);
+
+			return (void *)frame_phys_addr;
 		}
 	}
-	page_frames_state[i] = PAGE_STATE_USED;
-	return (page_frames_start_addr + (i * PAGE_SIZE));
+
+#ifdef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
+#endif
+	return NULL;
 }
 
-void kfree_frame(page_t a)
+void kfree_frame(page_t *a)
 {
-	page_t offset = a - page_frames_start_addr;
+	page_t *offset = a - page_frames_start_addr;
 
 	uint32_t index = ((uint32_t)offset) / PAGE_SIZE;
 
@@ -180,11 +199,11 @@ void kfree_frame(page_t a)
 	}
 }
 
-page_t kmalloc_page(void)
+page_t *kmalloc_page(void)
 {
 	local_persist uint8_t allocate = 1;
 	local_persist uint8_t pframe = 0;
-	page_t ret;
+	page_t *ret;
 
 	if (pframe == BATCH_PAGES_ALLOCED_MAX) {
 		allocate = 1;
@@ -192,9 +211,9 @@ page_t kmalloc_page(void)
 
 	if (allocate == 1) {
 		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			page_t frame = kmalloc_frame_int();
-			if (frame == (page_t)KMALLOC_FAILED_TO_ALLOCATE_ERR) {
-				abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame in kmalloc_frame");
+			page_t *frame = kmalloc_frame_int();
+			if (frame == NULL) {
+				return NULL;
 			}
 			pre_frames[i] = frame;
 		}
@@ -203,5 +222,6 @@ page_t kmalloc_page(void)
 	}
 	ret = pre_frames[pframe];
 	pframe++;
+
 	return ret;
 }
