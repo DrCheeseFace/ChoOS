@@ -12,6 +12,10 @@
 
 void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 {
+#ifndef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("entry: kernel_main");
+#endif
+
 	tty_init();
 	pmm_directory_init(magic, mbd);
 	gdt_init();

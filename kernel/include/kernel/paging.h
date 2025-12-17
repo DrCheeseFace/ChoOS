@@ -15,6 +15,10 @@
 #define BATCH_PAGES_ALLOCED_MAX 20
 #define PAGES_PER_TABLE 1024
 
+#define KERNEL_VIRT_OFFSET 0xC0000000
+
+#define P2V(addr) ((void *)((uintptr_t)(addr) + 0xC0000000))
+
 typedef struct {
 	uint32_t present : 1;
 	uint32_t rw : 1;
@@ -29,12 +33,8 @@ typedef struct {
 	uint32_t frame : 20;
 } __attribute__((packed)) page_t;
 
-typedef uint8_t page_state_t;
-#define PAGE_STATE_FREE 0
-#define PAGE_STATE_USED 1
-
-extern uint8_t endkernel[];
-extern uint8_t startkernel[];
+extern uint8_t _kernel_end[];
+extern uint8_t _kernel_start[];
 
 typedef multiboot_memory_map_t mmap_entry_t;
 

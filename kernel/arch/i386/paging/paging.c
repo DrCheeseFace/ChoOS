@@ -10,14 +10,20 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define BITMAP_SIZE (MAX_PAGE_FRAME_COUNT / 32)
+
 global_variable page_t *page_directory;
-global_variable page_state_t page_frames_state[MAX_PAGE_FRAME_COUNT];
+global_variable uint32_t page_frames_bitmap[BITMAP_SIZE];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
 global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
 internal page_t *kmalloc_frame_int(void);
+
+internal void bitmap_set(uint32_t bit);
+internal void bitmap_unset(uint32_t bit);
+internal bool bitmap_test(uint32_t bit);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
@@ -38,41 +44,40 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 	if (page_directory_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
-	page_directory = page_directory_phys;
-
-#ifdef DEBUG_LOGGING
-	KERNEL_DEBUG_LOGGER("memset'ing page_directory to zero");
-#endif
+	page_directory = P2V(page_directory_phys);
 	memset(page_directory, 0, PAGE_SIZE);
 
 	page_t *first_page_table_phys = kmalloc_frame_int();
 	if (first_page_table_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
-	memset(first_page_table_phys, 0, PAGE_SIZE);
+	page_t *first_page_table_virt = P2V(first_page_table_phys);
+	memset(first_page_table_virt, 0, PAGE_SIZE);
 
 	for (uint32_t i = 0; i < PAGES_PER_TABLE; i++) {
-		first_page_table_phys[i].frame = i;
-		first_page_table_phys[i].present = 1;
-		first_page_table_phys[i].rw = 1;
-		first_page_table_phys[i].user = 0;
+		first_page_table_virt[i].frame = i;
+		first_page_table_virt[i].present = 1;
+		first_page_table_virt[i].rw = 1;
+		first_page_table_virt[i].user = 0;
 	}
 
 	page_directory[0].frame =
 		((uintptr_t)first_page_table_phys) >> PAGE_SHIFT;
 	page_directory[0].present = 1;
 	page_directory[0].rw = 1;
-	page_directory[0].user = 0;
 
-	// recursive mapping
-	page_directory[PAGE_DIRECTORY_LENGTH - 1].frame =
+	page_directory[768].frame =
+		((uintptr_t)first_page_table_phys) >> PAGE_SHIFT;
+	page_directory[768].present = 1;
+	page_directory[768].rw = 1;
+	page_directory[768].user = 0;
+
+	page_directory[1023].frame =
 		((uintptr_t)page_directory_phys) >> PAGE_SHIFT;
-	page_directory[PAGE_DIRECTORY_LENGTH - 1].present = 1;
-	page_directory[PAGE_DIRECTORY_LENGTH - 1].rw = 1;
-	page_directory[PAGE_DIRECTORY_LENGTH - 1].user = 0;
+	page_directory[1023].present = 1;
+	page_directory[1023].rw = 1;
 
 	_loadPageDirectory((uintptr_t)page_directory_phys);
-	_enablePaging();
 
 #ifdef DEBUG_LOGGING
 	KERNEL_DEBUG_LOGGER("init paging OK");
@@ -81,9 +86,7 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 internal void pmm_frames_init(multiboot_info_t *mbd)
 {
-	for (int i = 0; i < MAX_PAGE_FRAME_COUNT; i++) {
-		page_frames_state[i] = PAGE_STATE_USED;
-	}
+	memset(page_frames_bitmap, 0xFF, sizeof(page_frames_bitmap));
 
 	page_frames_start_addr = 0x0;
 	page_frames_len = MAX_PAGE_FRAME_COUNT;
@@ -95,10 +98,15 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 
 	mmap_entry_t *entry = (mmap_entry_t *)mbd->mmap_addr;
 	while ((uint32_t)entry < mbd->mmap_addr + mbd->mmap_length) {
-		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE) {
+		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE &&
+		    entry->addr_high == 0) {
 			uintptr_t start = (uintptr_t)entry->addr_low;
 			uintptr_t length = (uintptr_t)entry->len_low;
 			uintptr_t end = start + length;
+
+			// align to page boundaries
+			start = (start + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+			end = end & ~(PAGE_SIZE - 1);
 #ifdef DEBUG_LOGGING
 			KERNEL_DEBUG_LOGGER(
 				"Found AVAILABLE RAM: 0x%x - 0x%x: %u bytes",
@@ -108,10 +116,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			for (uintptr_t addr = start; addr < end;
 			     addr += PAGE_SIZE) {
 				uint32_t page_idx = addr / PAGE_SIZE;
-
 				if (page_idx < MAX_PAGE_FRAME_COUNT) {
-					page_frames_state[page_idx] =
-						PAGE_STATE_FREE;
+					bitmap_unset(page_idx);
 				}
 			}
 		}
@@ -128,9 +134,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 					 sizeof(entry->size));
 	}
 
-	uintptr_t k_start = (uintptr_t)&startkernel;
-	;
-	uintptr_t k_end = (uintptr_t)&endkernel;
+	uintptr_t k_start = (uintptr_t)&_kernel_start;
+	uintptr_t k_end = (uintptr_t)&_kernel_end - KERNEL_VIRT_OFFSET;
 
 	uint32_t start_idx = k_start / PAGE_SIZE;
 	uint32_t end_idx = (k_end / PAGE_SIZE) + 1;
@@ -143,7 +148,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 
 	for (uint32_t i = start_idx; i < end_idx; i++) {
 		if (i < MAX_PAGE_FRAME_COUNT) {
-			page_frames_state[i] = PAGE_STATE_USED;
+			bitmap_set(i);
 		}
 	}
 
@@ -151,14 +156,19 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
 #endif
 	for (int i = 0; i < 256; i++) {
-		page_frames_state[i] = PAGE_STATE_USED;
+		bitmap_set(i);
 	}
 
 #ifdef DEBUG_LOGGING
-	int32_t free_count = 0;
-	for (int i = 0; i < MAX_PAGE_FRAME_COUNT; i++) {
-		if (page_frames_state[i] == PAGE_STATE_FREE)
-			free_count++;
+	int free_count = 0;
+	for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
+		if (page_frames_bitmap[i] != 0xFFFFFFFF) {
+			for (int j = 0; j < 32; j++) {
+				if (!(page_frames_bitmap[i] & (1 << j))) {
+					free_count++;
+				}
+			}
+		}
 	}
 	KERNEL_DEBUG_LOGGER("Initialization Complete. Total Free Memory: %u MB",
 			    (free_count * 4) / 1024);
@@ -167,18 +177,18 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 
 internal page_t *kmalloc_frame_int(void)
 {
-	size_t limit = (page_frames_len > MAX_PAGE_FRAME_COUNT) ?
-			       MAX_PAGE_FRAME_COUNT :
-			       page_frames_len;
+	for (size_t i = 0; i < BITMAP_SIZE; i++) {
+		if (page_frames_bitmap[i] != 0xFFFFFFFF) {
+			for (int j = 0; j < 32; j++) {
+				int bit_idx = i * 32 + j;
+				if (!bitmap_test(bit_idx)) {
+					bitmap_set(bit_idx);
 
-	for (size_t i = 0; i < limit; i++) {
-		if (page_frames_state[i] == PAGE_STATE_FREE) {
-			page_frames_state[i] = PAGE_STATE_USED;
-
-			uintptr_t frame_phys_addr =
-				page_frames_start_addr + (i * PAGE_SIZE);
-
-			return (void *)frame_phys_addr;
+					uintptr_t frame_phys_addr =
+						bit_idx * PAGE_SIZE;
+					return (void *)frame_phys_addr;
+				}
+			}
 		}
 	}
 
@@ -190,13 +200,9 @@ internal page_t *kmalloc_frame_int(void)
 
 void kfree_frame(page_t *a)
 {
-	page_t *offset = a - page_frames_start_addr;
-
-	uint32_t index = ((uint32_t)offset) / PAGE_SIZE;
-
-	if (index < page_frames_len) {
-		page_frames_state[index] = PAGE_STATE_FREE;
-	}
+	uintptr_t phys_addr = (uintptr_t)a;
+	uint32_t index = phys_addr / PAGE_SIZE;
+	bitmap_unset(index);
 }
 
 page_t *kmalloc_page(void)
@@ -224,4 +230,22 @@ page_t *kmalloc_page(void)
 	pframe++;
 
 	return ret;
+}
+
+#define INDEX_FROM_BIT(a) (a / 32)
+#define OFFSET_FROM_BIT(a) (a % 32)
+internal void bitmap_set(uint32_t bit)
+{
+	page_frames_bitmap[INDEX_FROM_BIT(bit)] |= (1 << OFFSET_FROM_BIT(bit));
+}
+
+internal void bitmap_unset(uint32_t bit)
+{
+	page_frames_bitmap[INDEX_FROM_BIT(bit)] &= ~(1 << OFFSET_FROM_BIT(bit));
+}
+
+internal bool bitmap_test(uint32_t bit)
+{
+	return page_frames_bitmap[INDEX_FROM_BIT(bit)] &
+	       (1 << OFFSET_FROM_BIT(bit));
 }
