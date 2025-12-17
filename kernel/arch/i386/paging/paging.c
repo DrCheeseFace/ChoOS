@@ -13,7 +13,7 @@
 #define BITMAP_SIZE (MAX_PAGE_FRAME_COUNT / 32)
 
 global_variable page_t *page_directory;
-global_variable uint32_t page_frames_bitmap[BITMAP_SIZE];
+global_variable uint32_t page_frames_state_bitmap[BITMAP_SIZE];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
 global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
@@ -21,9 +21,9 @@ global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 internal void pmm_frames_init(multiboot_info_t *mbd);
 internal page_t *kmalloc_frame_int(void);
 
-internal void bitmap_set(uint32_t bit);
-internal void bitmap_unset(uint32_t bit);
-internal bool bitmap_test(uint32_t bit);
+internal void page_frames_state_bitmap_set(uint32_t bit);
+internal void page_frames_state_bitmap_unset(uint32_t bit);
+internal bool page_frames_state_bitmap_test(uint32_t bit);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
@@ -86,7 +86,8 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 internal void pmm_frames_init(multiboot_info_t *mbd)
 {
-	memset(page_frames_bitmap, 0xFF, sizeof(page_frames_bitmap));
+	memset(page_frames_state_bitmap, 0xFF,
+	       sizeof(page_frames_state_bitmap));
 
 	page_frames_start_addr = 0x0;
 	page_frames_len = MAX_PAGE_FRAME_COUNT;
@@ -117,7 +118,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			     addr += PAGE_SIZE) {
 				uint32_t page_idx = addr / PAGE_SIZE;
 				if (page_idx < MAX_PAGE_FRAME_COUNT) {
-					bitmap_unset(page_idx);
+					page_frames_state_bitmap_unset(
+						page_idx);
 				}
 			}
 		}
@@ -148,7 +150,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 
 	for (uint32_t i = start_idx; i < end_idx; i++) {
 		if (i < MAX_PAGE_FRAME_COUNT) {
-			bitmap_set(i);
+			page_frames_state_bitmap_set(i);
 		}
 	}
 
@@ -156,15 +158,15 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
 #endif
 	for (int i = 0; i < 256; i++) {
-		bitmap_set(i);
+		page_frames_state_bitmap_set(i);
 	}
 
 #ifdef DEBUG_LOGGING
 	int free_count = 0;
 	for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
-		if (page_frames_bitmap[i] != 0xFFFFFFFF) {
+		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
 			for (int j = 0; j < 32; j++) {
-				if (!(page_frames_bitmap[i] & (1 << j))) {
+				if (!(page_frames_state_bitmap[i] & (1 << j))) {
 					free_count++;
 				}
 			}
@@ -178,11 +180,11 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 internal page_t *kmalloc_frame_int(void)
 {
 	for (size_t i = 0; i < BITMAP_SIZE; i++) {
-		if (page_frames_bitmap[i] != 0xFFFFFFFF) {
+		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
 			for (int j = 0; j < 32; j++) {
 				int bit_idx = i * 32 + j;
-				if (!bitmap_test(bit_idx)) {
-					bitmap_set(bit_idx);
+				if (!page_frames_state_bitmap_test(bit_idx)) {
+					page_frames_state_bitmap_set(bit_idx);
 
 					uintptr_t frame_phys_addr =
 						bit_idx * PAGE_SIZE;
@@ -202,7 +204,7 @@ void kfree_frame(page_t *a)
 {
 	uintptr_t phys_addr = (uintptr_t)a;
 	uint32_t index = phys_addr / PAGE_SIZE;
-	bitmap_unset(index);
+	page_frames_state_bitmap_unset(index);
 }
 
 page_t *kmalloc_page(void)
@@ -234,18 +236,20 @@ page_t *kmalloc_page(void)
 
 #define INDEX_FROM_BIT(a) (a / 32)
 #define OFFSET_FROM_BIT(a) (a % 32)
-internal void bitmap_set(uint32_t bit)
+internal void page_frames_state_bitmap_set(uint32_t bit)
 {
-	page_frames_bitmap[INDEX_FROM_BIT(bit)] |= (1 << OFFSET_FROM_BIT(bit));
+	page_frames_state_bitmap[INDEX_FROM_BIT(bit)] |=
+		(1 << OFFSET_FROM_BIT(bit));
 }
 
-internal void bitmap_unset(uint32_t bit)
+internal void page_frames_state_bitmap_unset(uint32_t bit)
 {
-	page_frames_bitmap[INDEX_FROM_BIT(bit)] &= ~(1 << OFFSET_FROM_BIT(bit));
+	page_frames_state_bitmap[INDEX_FROM_BIT(bit)] &=
+		~(1 << OFFSET_FROM_BIT(bit));
 }
 
-internal bool bitmap_test(uint32_t bit)
+internal bool page_frames_state_bitmap_test(uint32_t bit)
 {
-	return page_frames_bitmap[INDEX_FROM_BIT(bit)] &
+	return page_frames_state_bitmap[INDEX_FROM_BIT(bit)] &
 	       (1 << OFFSET_FROM_BIT(bit));
 }
