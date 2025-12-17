@@ -18,7 +18,6 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 			return ENOMEM;
 		}
 
-		// TODO change this to user accessable, writeable later
 		page_directory_entry->frame =
 			((uintptr_t)new_frame) >> PAGE_SHIFT;
 		page_directory_entry->present = 1;
