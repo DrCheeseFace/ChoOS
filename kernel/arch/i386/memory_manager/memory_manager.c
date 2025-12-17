@@ -57,6 +57,12 @@ int vmm_unmap_page(vaddr_t virt)
 	}
 
 	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
+	if (!page_table_entry->present) {
+#ifdef DEBUG_LOGGING
+		KERNEL_DEBUG_LOGGER("Virt 0x%x already not present", virt);
+#endif
+		return 0;
+	}
 
 #ifdef DEBUG_LOGGING
 	uintptr_t phys = page_table_entry->frame << 12;
