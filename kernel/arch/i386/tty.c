@@ -1,6 +1,6 @@
-#include "kernel/misc.h"
-#include "kernel/utils.h"
+#include <kernel/misc.h>
 #include <kernel/tty.h>
+#include <kernel/utils.h>
 #include <kernel/vga.h>
 
 #include <stdbool.h>
@@ -29,7 +29,7 @@ void tty_init(void)
 		}
 	}
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("tty init OK");
 #endif
 }

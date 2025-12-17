@@ -5,7 +5,6 @@
 #include <kernel/utils.h>
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -54,7 +53,7 @@ internal void idt_gate_set(uint8_t num, uint32_t base, uint16_t sel,
 
 void idt_init(void)
 {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init idt");
 #endif
 
@@ -196,7 +195,7 @@ void idt_init(void)
 
 	_idt_flush((uint32_t)&idt_ptr);
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init idt OK");
 #endif
 }

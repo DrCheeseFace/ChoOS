@@ -27,7 +27,7 @@ internal bool page_frames_state_bitmap_test(uint32_t bit);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init paging");
 #endif
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
@@ -79,7 +79,7 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 	_loadPageDirectory((uintptr_t)page_directory_phys);
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init paging OK");
 #endif
 }
@@ -92,7 +92,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	page_frames_start_addr = 0x0;
 	page_frames_len = MAX_PAGE_FRAME_COUNT;
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Initialized %d frames as USED",
 			    MAX_PAGE_FRAME_COUNT);
 #endif
@@ -108,7 +108,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			// align to page boundaries
 			start = (start + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 			end = end & ~(PAGE_SIZE - 1);
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"Found AVAILABLE RAM: 0x%x - 0x%x: %u bytes",
 				start, end, length);
@@ -124,7 +124,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			}
 		}
 		else {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"Found RESERVED Region: 0x%x - 0x%x",
 				entry->addr_low,
@@ -142,7 +142,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	uint32_t start_idx = k_start / PAGE_SIZE;
 	uint32_t end_idx = (k_end / PAGE_SIZE) + 1;
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER(
 		"Protecting Kernel Memory: 0x%x - 0x%x (Pages %d to %d)",
 		k_start, k_end, start_idx, end_idx);
@@ -154,14 +154,14 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 		}
 	}
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
 #endif
 	for (int i = 0; i < 256; i++) {
 		page_frames_state_bitmap_set(i);
 	}
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	int free_count = 0;
 	for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
 		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
@@ -194,7 +194,7 @@ internal page_t *kmalloc_frame_int(void)
 		}
 	}
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
 #endif
 	return NULL;

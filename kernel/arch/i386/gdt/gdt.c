@@ -1,6 +1,6 @@
-#include "kernel/utils.h"
 #include <kernel/gdt.h>
 #include <kernel/misc.h>
+#include <kernel/utils.h>
 
 #include <string.h>
 
@@ -13,7 +13,7 @@ global_variable struct tss_entry tss_entry;
 
 void gdt_init(void)
 {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init gdt");
 #endif
 
@@ -40,7 +40,7 @@ void gdt_init(void)
 
 	_tss_flush((uint32_t)&tss_entry);
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init gdt OK");
 #endif
 }

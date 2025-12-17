@@ -3,7 +3,6 @@
 #include <kernel/misc.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
-#include <stdio.h>
 
 global_variable uint64_t ticks;
 global_variable const uint32_t freq = 1000;
@@ -12,7 +11,7 @@ void irq_0_handler(unused struct interrupt_resigters *regs);
 
 void timer_init(void)
 {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("initing timer");
 #endif
 	ticks = 0;
@@ -26,7 +25,7 @@ void timer_init(void)
 	outb(PIT_CH0_DATA_PORT, (uint8_t)divisor & 0xFF);
 	outb(PIT_CH0_DATA_PORT, (uint8_t)(divisor >> 8) & 0xFF);
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init timer OK");
 #endif
 }

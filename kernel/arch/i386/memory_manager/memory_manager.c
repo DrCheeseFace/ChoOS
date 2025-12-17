@@ -36,7 +36,7 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 	page_table_entry->rw = (flags & 0x2) ? 1 : 0;
 	page_table_entry->user = (flags & 0x4) ? 1 : 0;
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Mapped Virt 0x%x to Phys 0x%x", virt, phys);
 #endif
 
@@ -48,7 +48,7 @@ int vmm_unmap_page(vaddr_t virt)
 {
 	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
 	if (!page_directory_entry->present) {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 		KERNEL_DEBUG_LOGGER(
 			"vmm_unmap_page failed. page directory entry not present for Virt 0x%x",
 			virt);
@@ -58,19 +58,19 @@ int vmm_unmap_page(vaddr_t virt)
 
 	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
 	if (!page_table_entry->present) {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 		KERNEL_DEBUG_LOGGER("Virt 0x%x already not present", virt);
 #endif
 		return 0;
 	}
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	uintptr_t phys = page_table_entry->frame << 12;
 #endif
 	page_table_entry->present = 0;
 	page_table_entry->frame = 0;
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Unmapped Virt 0x%x from Phys 0x%x", virt, phys);
 #endif
 

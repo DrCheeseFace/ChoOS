@@ -277,7 +277,7 @@ void irq_1_handler(unused struct interrupt_resigters *regs);
 
 void keyboard_init(void)
 {
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("initing keyboard input");
 #endif
 
@@ -287,7 +287,7 @@ void keyboard_init(void)
 
 	irq_install_handler(1, &irq_1_handler);
 
-#ifdef DEBUG_LOGGING
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("initing keyboard OK");
 #endif
 }

@@ -12,7 +12,7 @@
 
 void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 {
-#ifndef DEBUG_LOGGING
+#ifndef DEBUG
 	KERNEL_DEBUG_LOGGER("entry: kernel_main");
 #endif
 
