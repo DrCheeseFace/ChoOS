@@ -26,9 +26,6 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 
 		uintptr_t page_table_virt_start =
 			(uintptr_t)GET_PTE_PTR(virt) & PAGE_MASK;
-#ifdef DEBUG_LOGGING
-		KERNEL_DEBUG_LOGGER("flushing TLB");
-#endif
 		_tlb_flush(page_table_virt_start);
 		memset((void *)page_table_virt_start, 0, PAGE_SIZE);
 	}
@@ -43,9 +40,6 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 	KERNEL_DEBUG_LOGGER("Mapped Virt 0x%x to Phys 0x%x", virt, phys);
 #endif
 
-#ifdef DEBUG_LOGGING
-	KERNEL_DEBUG_LOGGER("flushing TLB");
-#endif
 	_tlb_flush(virt);
 	return 0;
 }
@@ -74,9 +68,6 @@ int vmm_unmap_page(vaddr_t virt)
 	KERNEL_DEBUG_LOGGER("Unmapped Virt 0x%x from Phys 0x%x", virt, phys);
 #endif
 
-#ifdef DEBUG_LOGGING
-	KERNEL_DEBUG_LOGGER("flushing TLB");
-#endif
 	_tlb_flush(virt);
 	return 0;
 }
