@@ -28,4 +28,6 @@ typedef uintptr_t vaddr_t;
 // Returns ENOMEM if run out of memory
 int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags);
 
+int vmm_unmap_page(vaddr_t virt);
+
 #endif

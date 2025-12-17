@@ -49,3 +49,34 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 	_tlb_flush(virt);
 	return 0;
 }
+
+int vmm_unmap_page(vaddr_t virt)
+{
+	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
+	if (!page_directory_entry->present) {
+#ifdef DEBUG_LOGGING
+		KERNEL_DEBUG_LOGGER(
+			"vmm_unmap_page failed. page directory entry not present for Virt 0x%x",
+			virt);
+#endif
+		return -1;
+	}
+
+	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
+
+#ifdef DEBUG_LOGGING
+	uintptr_t phys = page_table_entry->frame << 12;
+#endif
+	page_table_entry->present = 0;
+	page_table_entry->frame = 0;
+
+#ifdef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("Unmapped Virt 0x%x from Phys 0x%x", virt, phys);
+#endif
+
+#ifdef DEBUG_LOGGING
+	KERNEL_DEBUG_LOGGER("flushing TLB");
+#endif
+	_tlb_flush(virt);
+	return 0;
+}
