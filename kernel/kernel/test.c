@@ -1,13 +1,17 @@
+#include <kernel/heap.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
 #include <kernel/test.h>
 #include <kernel/utils.h>
 #include <kernel/vmm.h>
 #include <stdarg.h>
+#include <stdint.h>
 #include <stdio.h>
+#include <string.h>
 
 internal int test_vmm_aliasing(void);
 internal int test_vmm_unmap_virt(void);
+internal int test_test(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
 
@@ -21,6 +25,7 @@ int test_all(void)
 
 	err_out = run_test(test_vmm_aliasing, &passed, &total);
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
+	err_out = err_out || run_test(test_test, &passed, &total);
 
 	if (err_out) {
 		kernel_test_logger("TEST: FAILED");
@@ -45,15 +50,60 @@ internal int run_test(int (*test_func)(void), int *passed, int *total)
 	return err_out;
 }
 
+internal int test_test(void)
+{
+	kernel_test_logger("TEST: sbrk()");
+
+	kernel_test_logger("   [1/4] basic allocation... ");
+	uint8_t *region1 = (uint8_t *)sbrk(10);
+	ASSERT_MSG(region1 != (void *)-1, "sbrk(10) returned -1");
+	region1[0] = 0xAA;
+	region1[9] = 0xBB;
+	ASSERT_MSG(region1[0] == 0xAA,
+		   "memory write verification failed (start)");
+	ASSERT_MSG(region1[9] == 0xBB,
+		   "Memory write verification failed (end)");
+	kernel_test_logger("[PASSED]");
+
+	kernel_test_logger("   [2/4] metadata edge case... ");
+	size_t edge_size = PAGE_SIZE - sizeof(struct heap_block) + 10;
+	uint8_t *region2 = (uint8_t *)sbrk(edge_size);
+	ASSERT_MSG(region2 != (void *)-1, "sbrk(edge_size) returned -1");
+	region2[edge_size - 1] = 0xCC;
+	ASSERT_MSG(region2[edge_size - 1] == 0xCC,
+		   "edge case memory access failed");
+	kernel_test_logger("[PASSED]");
+
+	kernel_test_logger("   [3/4] multi-page (3 pages)... ");
+	size_t large_size = PAGE_SIZE * 3;
+	uint8_t *region3 = (uint8_t *)sbrk(large_size);
+	ASSERT_MSG(region3 != (void *)-1, "sbrk(large) returned -1");
+	region3[0] = 0x11;
+	region3[PAGE_SIZE] = 0x22;
+	region3[PAGE_SIZE * 2] = 0x33;
+	region3[large_size - 1] = 0x44;
+	ASSERT_MSG(region3[large_size - 1] == 0x44,
+		   "large allocation end access failed");
+	kernel_test_logger("[PASSED]");
+
+	kernel_test_logger("   [4/4] sbrk(0) & continuity... ");
+	void *current_break = sbrk(0);
+	ASSERT_MSG(current_break != (void *)-1, "sbrk(0) failed");
+	void *check_break = sbrk(0);
+	ASSERT_MSG(current_break == check_break, "sbrk(0) not consistent");
+	void *next_alloc = sbrk(1);
+	ASSERT_MSG(next_alloc != (void *)-1, "sbrk(1) failed");
+	kernel_test_logger("[PASSED]");
+
+	return 0;
+}
+
 internal int test_vmm_aliasing(void)
 {
 	kernel_test_logger("TEST: VMM Aliasing... ");
 
 	page_t *phys_frame = kmalloc_page();
-	if (phys_frame == NULL) {
-		kernel_test_logger("failed to allcoated page");
-		return 1;
-	}
+	ASSERT_MSG(phys_frame != NULL, "failed to allocate page");
 
 	uintptr_t virt_a = 0xD0000000;
 	uintptr_t virt_b = 0xE0000000;
@@ -66,19 +116,12 @@ internal int test_vmm_aliasing(void)
 
 	*ptr_a = 0xDEADBEEF;
 
-	if (*ptr_b == 0xDEADBEEF) {
-		kernel_test_logger("[PASSED]");
-		kernel_test_logger("   Writing to %x correctly updated %x",
-				   virt_a, virt_b);
-		vmm_page_unmap(virt_a);
-		vmm_page_unmap(virt_b);
-		return 0;
-	}
-	else {
-		kernel_test_logger("[FAILED]");
-		kernel_test_logger("   Expected 0xDEADBEEF but got %x", *ptr_b);
-		return 1;
-	}
+	ASSERT_MSG(*ptr_b == 0xDEADBEEF, "expected 0xdeadbeef but got %x");
+	kernel_test_logger("[PASSED]");
+	vmm_page_unmap(*ptr_b);
+	vmm_page_unmap(*ptr_a);
+
+	return 0;
 }
 
 internal int test_vmm_unmap_virt(void)
@@ -86,10 +129,8 @@ internal int test_vmm_unmap_virt(void)
 	kernel_test_logger("TEST: VMM Unmapping... ");
 
 	void *phys_frame_ptr = kmalloc_page();
-	if (phys_frame_ptr == NULL) {
-		kernel_test_logger("[FAILED] failed to allocate new page");
-		return 1;
-	}
+	ASSERT_MSG(phys_frame_ptr != NULL, "failed to allocate new page");
+
 	paddr_t phys_addr = (paddr_t)phys_frame_ptr;
 
 	uintptr_t virt_a = 0xD0000000;
@@ -103,40 +144,19 @@ internal int test_vmm_unmap_virt(void)
 
 	*ptr_a = 0xDEADBEEF;
 
-	if (*ptr_b != 0xDEADBEEF) {
-		kernel_test_logger(
-			"[FAILED] Aliasing setup failed. B does not equal A.");
-		goto cleanup;
-	}
+	ASSERT_MSG(*ptr_b == 0xDEADBEEF,
+		   "Aliasing setup failed. B does not equal A.");
 
 	int err = vmm_page_unmap(virt_b);
-	if (err) {
-		kernel_test_logger("[FAILED] vmm_unmap_page returned error");
-		goto cleanup;
-	}
-
-	if (*ptr_a != 0xDEADBEEF) {
-		kernel_test_logger("[FAILED] Unmapping B corrupted A");
-		goto cleanup;
-	}
+	ASSERT_MSG(!err, "vmm_unmap_page returned error");
+	ASSERT_MSG(*ptr_a == 0xDEADBEEF, "Unmapping B corrupted A");
 
 	page_t *page_table_entry_b = (page_t *)GET_PTE_PTR(virt_b);
-
-	if (page_table_entry_b->present == 1) {
-		kernel_test_logger(
-			"[FAILED] virt_b PTE is still marked PRESENT");
-		goto cleanup;
-	}
+	ASSERT_MSG(page_table_entry_b->present != 1,
+		   "virt_b PTE is still marked PRESENT");
 
 	kernel_test_logger("[PASSED]");
-	kernel_test_logger("    Virt_A remains valid: 0x%x", *ptr_a);
-	kernel_test_logger("    Virt_B marked not present.");
 	return 0;
-
-cleanup:
-	vmm_page_unmap(virt_a);
-	vmm_page_unmap(virt_b);
-	return 1;
 }
 
 internal void kernel_test_logger(const char *format, ...)

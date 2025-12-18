@@ -12,9 +12,12 @@
 - [x] enable paging
 - [x] replace nasm with just S cuz why do both lol
 - [x] jump to higher half kernel
-- [ ] bitmap to some other physical memory allocators
 - [ ] virtual memory management kmalloc, kfree, krealloc, kcalloc
+    - [ ] heap implementation
+- [ ] move tests over to using mrt_test framework. (after kmalloc implementation)
+- [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
+- [ ] processes, schedule(), yield() etc
 
 # TODO implementations
 paddr_t vmm_virt_to_phys(vaddr_t virt)

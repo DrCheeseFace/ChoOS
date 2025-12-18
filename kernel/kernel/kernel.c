@@ -1,4 +1,5 @@
 #include <kernel/gdt.h>
+#include <kernel/heap.h>
 #include <kernel/idt.h>
 #include <kernel/keyboard.h>
 #include <kernel/multiboot.h>
@@ -18,9 +19,10 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 #endif
 
 	tty_init();
-	pmm_directory_init(magic, mbd);
 	gdt_init();
 	idt_init();
+	pmm_directory_init(magic, mbd);
+	heap_init();
 	timer_init();
 	keyboard_init();
 

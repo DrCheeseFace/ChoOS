@@ -17,6 +17,7 @@ global_variable uint32_t page_frames_state_bitmap[BITMAP_SIZE];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
 global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
+global_variable uint64_t total_free_memory = 0;
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
 internal page_t *kmalloc_frame_int(void);
@@ -147,7 +148,6 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 		"Protecting Kernel Memory: 0x%x - 0x%x (Pages %d to %d)",
 		k_start, k_end, start_idx, end_idx);
 #endif
-
 	for (uint32_t i = start_idx; i < end_idx; i++) {
 		if (i < MAX_PAGE_FRAME_COUNT) {
 			page_frames_state_bitmap_set(i);
@@ -161,19 +161,22 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 		page_frames_state_bitmap_set(i);
 	}
 
-#ifdef DEBUG
-	int free_count = 0;
+	int free_page_count = 0;
 	for (uint32_t i = 0; i < BITMAP_SIZE; i++) {
 		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
 			for (int j = 0; j < 32; j++) {
 				if (!(page_frames_state_bitmap[i] & (1 << j))) {
-					free_count++;
+					free_page_count++;
 				}
 			}
 		}
 	}
+
+	total_free_memory = (uint64_t)free_page_count * PAGE_SIZE;
+
+#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Initialization Complete. Total Free Memory: %u MB",
-			    (free_count * 4) / 1024);
+			    (free_page_count * 4) / 1024);
 #endif
 }
 
@@ -232,6 +235,11 @@ page_t *kmalloc_page(void)
 	pframe++;
 
 	return ret;
+}
+
+uint64_t __get_total_free_memory(void)
+{
+	return total_free_memory;
 }
 
 #define INDEX_FROM_BIT(a) (a / 32)

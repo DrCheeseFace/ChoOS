@@ -4,11 +4,11 @@
 #include <kernel/utils.h>
 #include <stdint.h>
 
-typedef struct process_t {
+struct process {
 	struct registers_t regs;
 	uint32_t cr3;
-	struct process_t *next;
-} process_t;
+	struct process *next;
+} __attribute__((packed));
 
 void switch_task_irq0_handler(struct registers_t *regs);
 

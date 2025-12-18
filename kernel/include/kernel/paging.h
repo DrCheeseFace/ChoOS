@@ -17,7 +17,7 @@
 
 #define KERNEL_VIRT_OFFSET 0xC0000000
 
-#define P2V(addr) ((void *)((uintptr_t)(addr) + 0xC0000000))
+#define P2V(addr) ((void *)((uintptr_t)(addr) + KERNEL_VIRT_OFFSET))
 
 typedef struct {
 	uint32_t present : 1;
@@ -45,6 +45,8 @@ void kfree_frame(page_t *a);
 // returns page_t if ok
 // returns NULL if ran out of memory
 page_t *kmalloc_page(void);
+
+uint64_t __get_total_free_memory(void);
 
 extern void _loadPageDirectory(uint32_t addr);
 

@@ -9,9 +9,9 @@ SECTIONS
             *(.multiboot.data)
         }
 
-       .multiboot.text : {
+        .multiboot.text : {
            *(.multiboot.text)
-       }
+        }
 
 	. += 0xC0000000;
 
