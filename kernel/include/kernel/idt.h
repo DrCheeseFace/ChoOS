@@ -80,12 +80,11 @@ typedef struct {
 
 void idt_init(void);
 
-void isr_handler(struct interrupt_resigters *regs);
+void isr_handler(struct registers_t *regs);
 
-void irq_handler(struct interrupt_resigters *regs);
+void irq_handler(struct registers_t *regs);
 
-void irq_install_handler(int irq,
-			 void (*handler)(struct interrupt_resigters *r));
+void irq_install_handler(int irq, void (*handler)(struct registers_t *r));
 
 void irq_uninstall_handler(int irq);
 

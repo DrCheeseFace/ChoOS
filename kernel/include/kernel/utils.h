@@ -3,12 +3,16 @@
 
 #include <stdint.h>
 
-struct interrupt_resigters {
+struct registers_t {
 	uint32_t cr2;
 	uint32_t ds;
-	uint32_t edi, esi, ibp, esp, ebx, edx, ecx, eax;
+	// general purpose registers
+	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax;
 	uint32_t int_no, err_code;
-	uint32_t eip, csm, eflags, useresp, ss;
+	// pointer register
+	uint32_t eip, cs, eflags, useresp;
+	// segment registers
+	uint32_t ss;
 };
 
 void outb(uint16_t port, uint8_t value);

@@ -1,5 +1,5 @@
-#ifndef _KERNEL_MEMORY_MANAGER_H
-#define _KERNEL_MEMORY_MANAGER_H
+#ifndef _KERNEL_VMM_H
+#define _KERNEL_VMM_H
 
 #include <stdbool.h>
 #include <stdint.h>
@@ -34,4 +34,4 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags);
 // Returns -1 if page directory entry not found
 int vmm_page_unmap(vaddr_t virt);
 
-#endif
+#endif //!_KERNEL_VMM_H

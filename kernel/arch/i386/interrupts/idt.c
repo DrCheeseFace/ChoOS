@@ -10,7 +10,7 @@
 
 global_variable idt_entry_t idt_entries[IDT_MAX_DESCRIPTORS];
 global_variable idtr_t idt_ptr;
-void (*irq_routines[16])(struct interrupt_resigters *) = { 0 };
+void (*irq_routines[16])(struct registers_t *) = { 0 };
 
 extern void _idt_flush(uint32_t);
 
@@ -210,8 +210,7 @@ internal void idt_gate_set(uint8_t num, uint32_t base, uint16_t sel,
 	idt_entries[num].flags = flags | IDT_FLAG_USER_ACCESS;
 }
 
-void irq_install_handler(int irq,
-			 void (*handler)(struct interrupt_resigters *r))
+void irq_install_handler(int irq, void (*handler)(struct registers_t *r))
 {
 	irq_routines[irq] = handler;
 }
@@ -221,16 +220,16 @@ void irq_uninstall_handler(int irq)
 	irq_routines[irq] = 0;
 }
 
-void isr_handler(struct interrupt_resigters *regs)
+void isr_handler(struct registers_t *regs)
 {
 	if (regs->int_no < 32) {
 		abort(exception_messages[regs->int_no]);
 	}
 }
 
-void irq_handler(struct interrupt_resigters *regs)
+void irq_handler(struct registers_t *regs)
 {
-	void (*handler)(struct interrupt_resigters *regs);
+	void (*handler)(struct registers_t *regs);
 	handler = irq_routines[regs->int_no - 32];
 
 	if (handler) {

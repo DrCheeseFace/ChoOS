@@ -1,7 +1,7 @@
-#include <kernel/memory_manager.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
 #include <kernel/utils.h>
+#include <kernel/vmm.h>
 #include <stddef.h>
 #include <string.h>
 

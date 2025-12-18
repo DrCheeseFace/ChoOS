@@ -1,13 +1,14 @@
-#include "kernel/utils.h"
 #include <kernel/idt.h>
 #include <kernel/misc.h>
+#include <kernel/task.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
+#include <kernel/utils.h>
 
 global_variable uint64_t ticks;
 global_variable const uint32_t freq = 1000;
 
-void irq_0_handler(unused struct interrupt_resigters *regs);
+void irq_0_handler(unused struct registers_t *regs);
 
 void timer_init(void)
 {
@@ -30,7 +31,7 @@ void timer_init(void)
 #endif
 }
 
-void irq_0_handler(unused struct interrupt_resigters *regs)
+void irq_0_handler(unused struct registers_t *regs)
 {
 	ticks++;
 }

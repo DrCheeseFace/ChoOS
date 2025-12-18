@@ -11,7 +11,7 @@ extern "C" {
 #endif
 
 int memcmp(const void *, const void *, size_t);
-void *memcpy(void *__restrict, const void *__restrict, size_t);
+void *memcpy(void *restrict dstptr, const void *restrict srcptr, size_t size);
 void *memmove(void *, const void *, size_t);
 void *memset(void *, int, size_t);
 void *memchr(const void *src, int c, size_t n);

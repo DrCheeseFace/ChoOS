@@ -273,7 +273,7 @@ const uint32_t uppercase[128] = { KEYBOARD_KEY_UNKNOWN,
 internal bool update_modifier_keys_state(enum PS2_scancode_set_1 scancode,
 					 bool press);
 internal void log_key_press(enum PS2_scancode_set_1 scancode);
-void irq_1_handler(unused struct interrupt_resigters *regs);
+void irq_1_handler(unused struct registers_t *regs);
 
 void keyboard_init(void)
 {
@@ -292,7 +292,7 @@ void keyboard_init(void)
 #endif
 }
 
-void irq_1_handler(unused struct interrupt_resigters *regs)
+void irq_1_handler(unused struct registers_t *regs)
 {
 	char scancode = inb(PC_AC_KEYBOARD_CONTROLLER_PORT) & 0x7F;
 	char press = inb(PC_AC_KEYBOARD_CONTROLLER_PORT) & 0x80; // down or up

@@ -1,8 +1,8 @@
-#include <kernel/memory_manager.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
 #include <kernel/test.h>
 #include <kernel/utils.h>
+#include <kernel/vmm.h>
 #include <stdarg.h>
 #include <stdio.h>
 
