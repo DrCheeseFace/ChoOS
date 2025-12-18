@@ -58,8 +58,8 @@ internal int test_vmm_aliasing(void)
 	uintptr_t virt_a = 0xD0000000;
 	uintptr_t virt_b = 0xE0000000;
 
-	vmm_map_page((paddr_t)phys_frame, virt_a, 3);
-	vmm_map_page((paddr_t)phys_frame, virt_b, 3);
+	vmm_page_map((paddr_t)phys_frame, virt_a, 3);
+	vmm_page_map((paddr_t)phys_frame, virt_b, 3);
 
 	uintptr_t *ptr_a = (uintptr_t *)virt_a;
 	uintptr_t *ptr_b = (uintptr_t *)virt_b;
@@ -70,8 +70,8 @@ internal int test_vmm_aliasing(void)
 		kernel_test_logger("[PASSED]");
 		kernel_test_logger("   Writing to %x correctly updated %x",
 				   virt_a, virt_b);
-		vmm_unmap_page(virt_a);
-		vmm_unmap_page(virt_b);
+		vmm_page_unmap(virt_a);
+		vmm_page_unmap(virt_b);
 		return 0;
 	}
 	else {
@@ -95,8 +95,8 @@ internal int test_vmm_unmap_virt(void)
 	uintptr_t virt_a = 0xD0000000;
 	uintptr_t virt_b = 0xE0000000;
 
-	vmm_map_page(phys_addr, virt_a, 3);
-	vmm_map_page(phys_addr, virt_b, 3);
+	vmm_page_map(phys_addr, virt_a, 3);
+	vmm_page_map(phys_addr, virt_b, 3);
 
 	volatile uint32_t *ptr_a = (uint32_t *)virt_a;
 	volatile uint32_t *ptr_b = (uint32_t *)virt_b;
@@ -109,7 +109,7 @@ internal int test_vmm_unmap_virt(void)
 		goto cleanup;
 	}
 
-	int err = vmm_unmap_page(virt_b);
+	int err = vmm_page_unmap(virt_b);
 	if (err) {
 		kernel_test_logger("[FAILED] vmm_unmap_page returned error");
 		goto cleanup;
@@ -134,8 +134,8 @@ internal int test_vmm_unmap_virt(void)
 	return 0;
 
 cleanup:
-	vmm_unmap_page(virt_a);
-	vmm_unmap_page(virt_b);
+	vmm_page_unmap(virt_a);
+	vmm_page_unmap(virt_b);
 	return 1;
 }
 

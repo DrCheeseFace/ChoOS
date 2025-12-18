@@ -24,12 +24,14 @@ typedef uintptr_t vaddr_t;
 #define GET_PDE_PTR(addr)                                                      \
 	((uint32_t *)(PD_BASE_VADDR + (((uint32_t)(addr) >> 22) * 4)))
 
+extern void _tlb_flush(uint32_t addr);
+
 // Returns 0 if ok
 // Returns ENOMEM if run out of memory
-int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags);
+int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags);
 
 // Returns 0 if ok
 // Returns -1 if page directory entry not found
-int vmm_unmap_page(vaddr_t virt);
+int vmm_page_unmap(vaddr_t virt);
 
 #endif

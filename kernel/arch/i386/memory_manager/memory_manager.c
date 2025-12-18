@@ -5,9 +5,7 @@
 #include <stddef.h>
 #include <string.h>
 
-extern void _tlb_flush(uint32_t addr);
-
-int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
+int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 {
 	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
 
@@ -44,7 +42,7 @@ int vmm_map_page(paddr_t phys, vaddr_t virt, uint32_t flags)
 	return 0;
 }
 
-int vmm_unmap_page(vaddr_t virt)
+int vmm_page_unmap(vaddr_t virt)
 {
 	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
 	if (!page_directory_entry->present) {
