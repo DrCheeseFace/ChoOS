@@ -95,6 +95,10 @@ void *sbrk(intptr_t increment)
 
 	program_break_point = virt_addr;
 
+#ifdef DEBUG
+	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
+#endif
+
 	return (void *)old_heap_end;
 }
 

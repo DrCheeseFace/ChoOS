@@ -11,7 +11,7 @@
 
 internal int test_vmm_aliasing(void);
 internal int test_vmm_unmap_virt(void);
-internal int test_test(void);
+internal int test_sbrk(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
 
@@ -25,7 +25,7 @@ int test_all(void)
 
 	err_out = run_test(test_vmm_aliasing, &passed, &total);
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
-	err_out = err_out || run_test(test_test, &passed, &total);
+	err_out = err_out || run_test(test_sbrk, &passed, &total);
 
 	if (err_out) {
 		kernel_test_logger("TEST: FAILED");
@@ -50,7 +50,7 @@ internal int run_test(int (*test_func)(void), int *passed, int *total)
 	return err_out;
 }
 
-internal int test_test(void)
+internal int test_sbrk(void)
 {
 	kernel_test_logger("TEST: sbrk()");
 
