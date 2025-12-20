@@ -114,8 +114,8 @@ internal int test_sbrk(void)
 	ASSERT_MSG(alloc_ret != (void *)-1, "sbrk(PAGE_SIZE) failed");
 	uint8_t *end_break = (uint8_t *)sbrk(0);
 	intptr_t actual_growth = end_break - start_break;
-	ASSERT_MSG(actual_growth == (2 * PAGE_SIZE),
-		   "growth was not 2 pages as expected");
+	ASSERT_MSG(actual_growth == (PAGE_SIZE),
+		   "growth was not 1 page as expected");
 	intptr_t shrink_val = -((intptr_t)(end_break - start_break));
 	void *shrink_ret = sbrk(shrink_val);
 	ASSERT_MSG(

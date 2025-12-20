@@ -4,9 +4,7 @@
 #include <kernel/utils.h>
 #include <kernel/vmm.h>
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 
 struct heap_block *heap_start = NULL;
 uintptr_t program_break_point = 0;
@@ -80,32 +78,35 @@ void *sbrk(intptr_t increment)
 internal void *increment_brk(uintptr_t increment)
 {
 	uintptr_t old_program_break = program_break_point;
-	size_t required_size = increment + sizeof(struct heap_block);
-	int pages_to_allocate =
-		((required_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) /
-		PAGE_SIZE;
+	uintptr_t new_program_break = program_break_point + increment;
 
-	page_t *page = NULL;
-	for (int i = 0; i < pages_to_allocate; i++) {
-		page = kmalloc_page();
-		if (page == NULL) {
-			return (void *)-1;
-		}
+	uintptr_t current_mapped_top =
+		(program_break_point + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
+	uintptr_t new_mapped_top =
+		(new_program_break + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
-		int res =
-			vmm_page_map((uintptr_t)page, program_break_point, 0x3);
-		if (res != 0) {
+	if (new_mapped_top > current_mapped_top) {
+		uintptr_t vaddr = current_mapped_top;
+		while (vaddr < new_mapped_top) {
+			page_t *page = kmalloc_page();
+			if (page == NULL) {
+				return (void *)-1;
+			}
+
+			int res = vmm_page_map((uintptr_t)page, vaddr, 0x3);
+			if (res != 0) {
 #ifdef DEBUG
-			KERNEL_DEBUG_LOGGER(
-				"failed to map page PHYS 0x%x to VIRT 0x%x",
-				(uintptr_t)page, program_break_point);
+				KERNEL_DEBUG_LOGGER("failed to map VIRT 0x%x",
+						    vaddr);
 #endif
-			kfree_frame(page);
-			return (void *)-1;
-		}
+				kfree_frame(page);
+				return (void *)-1;
+			}
 
-		program_break_point += PAGE_SIZE;
+			vaddr += PAGE_SIZE;
+		}
 	}
+	program_break_point = new_program_break;
 
 #ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
@@ -117,27 +118,26 @@ internal void *increment_brk(uintptr_t increment)
 internal void *decrement_brk(uintptr_t decrement)
 {
 	uintptr_t old_program_break = program_break_point;
-	uint32_t bytes_to_remove = decrement + sizeof(struct heap_block);
-	uintptr_t current_heap_size =
-		(uintptr_t)program_break_point - (uintptr_t)heap_start;
+	uintptr_t new_program_break = program_break_point - decrement;
 
-	if (bytes_to_remove > current_heap_size) {
+	if (new_program_break < (uintptr_t)heap_start) {
 		return (void *)-1;
 	}
 
-	uint32_t pages_to_deallocate = (bytes_to_remove) / PAGE_SIZE;
+	while (program_break_point - PAGE_SIZE >= new_program_break) {
+		void *page_addr = (void *)(program_break_point - PAGE_SIZE);
 
-	for (uint32_t i = 0; i < pages_to_deallocate; i++) {
-		page_t *page = (void *)(program_break_point - PAGE_SIZE);
-		kfree_frame(V2P(page));
-		int res = vmm_page_unmap((vaddr_t)page);
-		if (res != 0) {
+		kfree_frame(V2P(page_addr));
+		int err = vmm_page_unmap((uintptr_t)page_addr);
+		if (err != 0) {
 #ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"failed to unmap PHYS 0x%x from VIRT 0x%x",
-				(uintptr_t)V2P(page), (uintptr_t)page);
+				(uintptr_t)V2P(page_addr),
+				(uintptr_t)page_addr);
 #endif
 		}
+
 		program_break_point -= PAGE_SIZE;
 	}
 
