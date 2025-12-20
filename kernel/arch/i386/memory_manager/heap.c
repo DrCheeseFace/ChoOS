@@ -136,8 +136,9 @@ internal void *decrement_brk(uintptr_t decrement)
 		int res = vmm_page_unmap((vaddr_t)page);
 		if (res != 0) {
 #ifdef DEBUG
-			KERNEL_DEBUG_LOGGER("failed to unmap VIRT 0x%x",
-					    (vaddr_t)V2P(page));
+			KERNEL_DEBUG_LOGGER(
+				"failed to unmap PHYS 0x%x from VIRT 0x%x",
+				(uintptr_t)V2P(page), (uintptr_t)page);
 #endif
 		}
 		program_break_point -= PAGE_SIZE;
