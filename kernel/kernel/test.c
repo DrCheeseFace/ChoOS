@@ -54,7 +54,7 @@ internal int test_sbrk(void)
 {
 	kernel_test_logger("TEST: sbrk()");
 
-	kernel_test_logger("   [1/4] basic allocation... ");
+	kernel_test_logger("   [1/7] basic allocation... ");
 	uint8_t *region1 = (uint8_t *)sbrk(10);
 	ASSERT_MSG(region1 != (void *)-1, "sbrk(10) returned -1");
 	region1[0] = 0xAA;
@@ -62,10 +62,10 @@ internal int test_sbrk(void)
 	ASSERT_MSG(region1[0] == 0xAA,
 		   "memory write verification failed (start)");
 	ASSERT_MSG(region1[9] == 0xBB,
-		   "Memory write verification failed (end)");
+		   "memory write verification failed (end)");
 	kernel_test_logger("[PASSED]");
 
-	kernel_test_logger("   [2/4] metadata edge case... ");
+	kernel_test_logger("   [2/7] metadata edge case... ");
 	size_t edge_size = PAGE_SIZE - sizeof(struct heap_block) + 10;
 	uint8_t *region2 = (uint8_t *)sbrk(edge_size);
 	ASSERT_MSG(region2 != (void *)-1, "sbrk(edge_size) returned -1");
@@ -74,7 +74,7 @@ internal int test_sbrk(void)
 		   "edge case memory access failed");
 	kernel_test_logger("[PASSED]");
 
-	kernel_test_logger("   [3/4] multi-page (3 pages)... ");
+	kernel_test_logger("   [3/7] multi-page (3 pages)... ");
 	size_t large_size = PAGE_SIZE * 3;
 	uint8_t *region3 = (uint8_t *)sbrk(large_size);
 	ASSERT_MSG(region3 != (void *)-1, "sbrk(large) returned -1");
@@ -86,13 +86,54 @@ internal int test_sbrk(void)
 		   "large allocation end access failed");
 	kernel_test_logger("[PASSED]");
 
-	kernel_test_logger("   [4/4] sbrk(0) & continuity... ");
+	kernel_test_logger("   [4/7] sbrk(0) & continuity... ");
 	void *current_break = sbrk(0);
 	ASSERT_MSG(current_break != (void *)-1, "sbrk(0) failed");
 	void *check_break = sbrk(0);
 	ASSERT_MSG(current_break == check_break, "sbrk(0) not consistent");
 	void *next_alloc = sbrk(1);
 	ASSERT_MSG(next_alloc != (void *)-1, "sbrk(1) failed");
+
+	kernel_test_logger("   [5/7] align to page boundary... ");
+	void *current_addr = sbrk(0);
+	ASSERT_MSG(current_addr != (void *)-1, "sbrk(0) failed");
+	size_t offset = (uintptr_t)current_addr % PAGE_SIZE;
+	size_t padding = (offset == 0) ? 0 : (PAGE_SIZE - offset);
+	if (padding > 0) {
+		void *pad_res = sbrk(padding);
+		ASSERT_MSG(pad_res != (void *)-1, "padding allocation failed");
+	}
+	void *aligned_addr = sbrk(0);
+	ASSERT_MSG((uintptr_t)aligned_addr % PAGE_SIZE == 0,
+		   "heap not page aligned");
+
+	kernel_test_logger("   [6/7] negative sbrk (page aligned)... ");
+	uint8_t *start_break = (uint8_t *)sbrk(0);
+	ASSERT_MSG(start_break != (void *)-1, "sbrk(0) failed");
+	void *alloc_ret = sbrk(PAGE_SIZE);
+	ASSERT_MSG(alloc_ret != (void *)-1, "sbrk(PAGE_SIZE) failed");
+	uint8_t *end_break = (uint8_t *)sbrk(0);
+	intptr_t actual_growth = end_break - start_break;
+	ASSERT_MSG(actual_growth == (2 * PAGE_SIZE),
+		   "growth was not 2 pages as expected");
+	intptr_t shrink_val = -((intptr_t)(end_break - start_break));
+	void *shrink_ret = sbrk(shrink_val);
+	ASSERT_MSG(
+		shrink_ret == (void *)end_break,
+		"sbrk negative return value mismatch (must be previous break)");
+	void *final_break = sbrk(0);
+	ASSERT_MSG(final_break == start_break,
+		   "heap break did not return to original position");
+
+	kernel_test_logger("   [7/7] negative sbrk (underflow)... ");
+	intptr_t huge_negative = -(1024 * 1024 * 1024);
+	void *underflow_ret = sbrk(huge_negative);
+	ASSERT_MSG(underflow_ret == (void *)-1,
+		   "sbrk(huge_negative) should fail");
+	void *stable_break = sbrk(0);
+	ASSERT_MSG(stable_break == alloc_ret,
+		   "break pointer moved after failed underflow");
+
 	kernel_test_logger("[PASSED]");
 
 	return 0;

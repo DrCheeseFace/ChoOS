@@ -22,11 +22,24 @@ struct heap_block {
 void heap_init(void);
 
 /*
+ * DESCRIPTION
+ *     brk() sets the end of the data segment to the value specified by addr,
+ *     when that value is reasonable,  the  system  has enough memory.
+ *
+ * RETURNS
+ *     if sucesss 0
+ *     if err -1
+ *
+ */
+int brk(void *addr);
+
+/*
  *
  * DESCRIPTION
  *     sbrk()  increments  the  program's data space by increment bytes.
  *     Calling sbrk() with an increment of 0 can be used to
  *     find the current location of the program break.
+ *     if negative increment is given, decrements if can
  *
  * RETURNS
  *     On success, returns the previous program break.

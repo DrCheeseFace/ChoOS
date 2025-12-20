@@ -18,6 +18,7 @@
 #define KERNEL_VIRT_OFFSET 0xC0000000
 
 #define P2V(addr) ((void *)((uintptr_t)(addr) + KERNEL_VIRT_OFFSET))
+#define V2P(addr) ((void *)((uintptr_t)(addr) - KERNEL_VIRT_OFFSET))
 
 typedef struct {
 	uint32_t present : 1;
