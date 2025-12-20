@@ -102,7 +102,6 @@ internal void *increment_brk(uintptr_t increment)
 				kfree_frame(page);
 				return (void *)-1;
 			}
-
 			vaddr += PAGE_SIZE;
 		}
 	}
@@ -137,9 +136,12 @@ internal void *decrement_brk(uintptr_t decrement)
 				(uintptr_t)page_addr);
 #endif
 		}
-
 		program_break_point -= PAGE_SIZE;
 	}
+
+#ifdef DEBUG
+	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
+#endif
 
 	return (void *)old_program_break;
 }
