@@ -85,7 +85,6 @@ internal void *increment_brk(uintptr_t increment)
 		((required_size + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1)) /
 		PAGE_SIZE;
 
-	uintptr_t virt_addr = program_break_point;
 	page_t *page = NULL;
 	for (int i = 0; i < pages_to_allocate; i++) {
 		page = kmalloc_page();
@@ -93,22 +92,20 @@ internal void *increment_brk(uintptr_t increment)
 			return (void *)-1;
 		}
 
-		int res = vmm_page_map((uintptr_t)page, virt_addr, 0x3);
+		int res =
+			vmm_page_map((uintptr_t)page, program_break_point, 0x3);
 		if (res != 0) {
 #ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"failed to map page PHYS 0x%x to VIRT 0x%x",
-				(uintptr_t)page, virt_addr);
+				(uintptr_t)page, program_break_point);
 #endif
-			// TODO corrupted state here? wrong program_break_point it seems
 			kfree_frame(page);
 			return (void *)-1;
 		}
 
-		virt_addr += PAGE_SIZE;
+		program_break_point += PAGE_SIZE;
 	}
-
-	program_break_point = virt_addr;
 
 #ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
