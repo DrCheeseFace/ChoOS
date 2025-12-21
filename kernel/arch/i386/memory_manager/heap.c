@@ -12,8 +12,9 @@ uintptr_t program_break_point = 0;
 
 internal void *increment_brk(uintptr_t increment);
 internal void *decrement_brk(uintptr_t decrement);
-internal void split_block(struct heap_block *block, size_t size);
-internal void *block_set_metadata(void *dst, bool EOM, bool free, void *next);
+internal void block_split(struct heap_block *block, size_t size);
+internal void *block_set_metadata(struct heap_block *dst, bool EOM, bool free,
+				  void *next);
 internal void block_merge_down(struct heap_block *block);
 
 void heap_init(void)
@@ -82,7 +83,7 @@ void *kmalloc(size_t size)
 			 ((uintptr_t)node - sizeof(struct heap_block)));
 
 		if (node->free && available_space >= size) {
-			split_block(node, size);
+			block_split(node, size);
 			node->free = HEAP_BLOCK_USED;
 			return node + 1; // return memory within heap block
 		}
@@ -139,7 +140,7 @@ internal void block_merge_down(struct heap_block *block)
 	block->next = block->next->next;
 }
 
-internal void split_block(struct heap_block *block, size_t size)
+internal void block_split(struct heap_block *block, size_t size)
 {
 	size_t available_space =
 		((uintptr_t)block->next -
@@ -160,7 +161,8 @@ internal void split_block(struct heap_block *block, size_t size)
 	block->next = new_block;
 }
 
-internal void *block_set_metadata(void *dst, bool EOM, bool free, void *next)
+internal void *block_set_metadata(struct heap_block *dst, bool EOM, bool free,
+				  void *next)
 {
 	struct heap_block *heap_end = dst;
 	heap_end->EOM = EOM;
