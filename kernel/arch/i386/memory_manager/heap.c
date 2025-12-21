@@ -5,12 +5,16 @@
 #include <kernel/vmm.h>
 #include <stdint.h>
 #include <stdlib.h>
+#include <string.h>
 
 struct heap_block *heap_start = NULL;
 uintptr_t program_break_point = 0;
 
 internal void *increment_brk(uintptr_t increment);
 internal void *decrement_brk(uintptr_t decrement);
+internal void split_block(struct heap_block *block, size_t size);
+internal void *block_set_metadata(void *dst, bool EOM, bool free, void *next);
+internal void block_merge_down(struct heap_block *block);
 
 void heap_init(void)
 {
@@ -34,19 +38,13 @@ void heap_init(void)
 	program_break_point = hard_limit_addr;
 
 	// init end block
-	uintptr_t heap_end_addr = hard_limit_addr;
-	struct heap_block *heap_end =
-		(struct heap_block *)(heap_end_addr -
-				      sizeof(struct heap_block));
-	heap_end->EOM = EOM_TRUE;
-	heap_end->free = HEAP_BLOCK_USED;
-	heap_end->next = NULL;
+	uintptr_t heap_end_addr = hard_limit_addr - sizeof(struct heap_block);
+	struct heap_block *heap_end = block_set_metadata(
+		(void *)heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	// init start block
-	heap_start = (struct heap_block *)heap_start_addr;
-	heap_start->EOM = EOM_FALSE;
-	heap_start->free = HEAP_BLOCK_FREE;
-	heap_start->next = heap_end;
+	heap_start = block_set_metadata((void *)heap_start_addr, EOM_FALSE,
+					HEAP_BLOCK_FREE, heap_end);
 
 #ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("heap start: 0x%x", heap_start_addr);
@@ -75,6 +73,102 @@ void *sbrk(intptr_t increment)
 	return decrement_brk(-increment);
 }
 
+void *kmalloc(size_t size)
+{
+	struct heap_block *node = heap_start;
+	while (!node->EOM) {
+		size_t available_space =
+			((uintptr_t)node->next -
+			 ((uintptr_t)node - sizeof(struct heap_block)));
+
+		if (node->free && available_space >= size) {
+			split_block(node, size);
+			node->free = HEAP_BLOCK_USED;
+			return node + 1; // return memory within heap block
+		}
+	}
+	// more allocation needed
+	void *new_block = sbrk(size + sizeof(struct heap_block));
+	if (new_block == (void *)-1) {
+#ifdef DEBUG
+		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d", (int32_t)size);
+#endif
+		return NULL;
+	}
+
+	// at this point, node is the EOM block.
+	uintptr_t heap_end_addr =
+		program_break_point - sizeof(struct heap_block);
+	memset((void *)node, 0, sizeof(struct heap_block));
+
+	block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
+			   (void *)((uintptr_t)program_break_point -
+				    sizeof(struct heap_block)));
+
+	struct heap_block *new_allocation = block_set_metadata(
+		(void *)heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+
+	return new_allocation;
+}
+
+void kfree(void *ptr)
+{
+	struct heap_block *heap_block =
+		(void *)((uintptr_t)ptr - sizeof(struct heap_block));
+	heap_block->free = HEAP_BLOCK_FREE;
+
+	if (heap_block->next->free) {
+		block_merge_down(heap_block);
+	}
+
+	if (heap_block == heap_start) {
+		return;
+	}
+
+	struct heap_block *parent_block = heap_start;
+	while (parent_block->next != heap_block) {
+		parent_block = parent_block->next;
+	}
+	if (parent_block->free) {
+		block_merge_down(parent_block);
+	}
+}
+
+internal void block_merge_down(struct heap_block *block)
+{
+	block->next = block->next->next;
+}
+
+internal void split_block(struct heap_block *block, size_t size)
+{
+	size_t available_space =
+		((uintptr_t)block->next -
+		 ((uintptr_t)block - sizeof(struct heap_block)));
+
+	// no need to split
+	if (available_space - size - sizeof(struct heap_block) <
+	    MINIMUM_ALLOCATION_BYTES) {
+		return;
+	}
+
+	uintptr_t new_block_addr =
+		((uintptr_t)block + sizeof(struct heap_block) + size);
+
+	struct heap_block *new_block =
+		block_set_metadata((void *)new_block_addr, EOM_FALSE,
+				   HEAP_BLOCK_FREE, block->next);
+	block->next = new_block;
+}
+
+internal void *block_set_metadata(void *dst, bool EOM, bool free, void *next)
+{
+	struct heap_block *heap_end = dst;
+	heap_end->EOM = EOM;
+	heap_end->free = free;
+	heap_end->next = next;
+	return heap_end;
+}
+
 internal void *increment_brk(uintptr_t increment)
 {
 	uintptr_t old_program_break = program_break_point;
@@ -100,6 +194,7 @@ internal void *increment_brk(uintptr_t increment)
 						    vaddr);
 #endif
 				kfree_frame(page);
+				// TODO unmap all the pages alloced
 				return (void *)-1;
 			}
 			vaddr += PAGE_SIZE;

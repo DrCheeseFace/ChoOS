@@ -6,6 +6,7 @@
 #include <stdint.h>
 
 #define INITIAL_HEAP_SIZE 1024 * 1024
+#define MINIMUM_ALLOCATION_BYTES 16
 
 // TODO add magic padding
 struct heap_block {
@@ -49,5 +50,16 @@ int brk(void *addr);
  *
  */
 void *sbrk(intptr_t increment);
+
+/*
+ *
+ * RETURNS
+ *     on sucess, pointer to start of newly allocated region of memory
+ *     on err(failed to allocate memory), returns NULL
+ *
+ */
+void *kmalloc(size_t size);
+
+void kfree(void *);
 
 #endif // !_KERNEL_HEAP_H
