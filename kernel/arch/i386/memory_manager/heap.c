@@ -39,9 +39,10 @@ void heap_init(void)
 	program_break_point = hard_limit_addr;
 
 	// init end block
-	uintptr_t heap_end_addr = hard_limit_addr - sizeof(struct heap_block);
+	struct heap_block *heap_end_addr =
+		(struct heap_block *)hard_limit_addr - 1;
 	struct heap_block *heap_end = block_set_metadata(
-		(void *)heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+		heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	// init start block
 	heap_start = block_set_metadata((void *)heap_start_addr, EOM_FALSE,
@@ -98,24 +99,22 @@ void *kmalloc(size_t size)
 	}
 
 	// at this point, node is the EOM block.
-	uintptr_t heap_end_addr =
-		program_break_point - sizeof(struct heap_block);
+	struct heap_block *heap_end =
+		(struct heap_block *)program_break_point - 1;
 	memset((void *)node, 0, sizeof(struct heap_block));
 
 	block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
-			   (void *)((uintptr_t)program_break_point -
-				    sizeof(struct heap_block)));
+			   (struct heap_block *)program_break_point - 1);
 
-	struct heap_block *new_allocation = block_set_metadata(
-		(void *)heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+	struct heap_block *new_allocation =
+		block_set_metadata(heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	return new_allocation;
 }
 
 void kfree(void *ptr)
 {
-	struct heap_block *heap_block =
-		(void *)((uintptr_t)ptr - sizeof(struct heap_block));
+	struct heap_block *heap_block = (struct heap_block *)ptr - 1;
 	heap_block->free = HEAP_BLOCK_FREE;
 
 	if (heap_block->next->free) {
