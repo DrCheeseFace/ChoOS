@@ -68,9 +68,6 @@ $(ARCHDIR)/crtbegin.o $(ARCHDIR)/crtend.o:
 .S.o:
 	$(CC) -MD -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
 
-.nasm.o:
-	$(NASM) $(NASMFLAGS) -o $@ $<
-
 clean:
 	rm -f pissos.kernel
 	rm -f $(OBJS) *.o */*.o */*/*.o
