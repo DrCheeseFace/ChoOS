@@ -39,10 +39,9 @@ void heap_init(void)
 	program_break_point = hard_limit_addr;
 
 	// init end block
-	struct heap_block *heap_end_addr =
-		(struct heap_block *)hard_limit_addr - 1;
-	struct heap_block *heap_end = block_set_metadata(
-		heap_end_addr, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+	struct heap_block *heap_end =
+		block_set_metadata((struct heap_block *)hard_limit_addr - 1,
+				   EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	// init start block
 	heap_start = block_set_metadata((void *)heap_start_addr, EOM_FALSE,
@@ -115,6 +114,12 @@ void *kmalloc(size_t size)
 void kfree(void *ptr)
 {
 	struct heap_block *heap_block = (struct heap_block *)ptr - 1;
+#ifdef DEBUG
+	if (heap_block->free) {
+		KERNEL_DEBUG_LOGGER("DOUBLE FREE attempted at 0x%x", ptr);
+	}
+#endif
+
 	heap_block->free = HEAP_BLOCK_FREE;
 
 	if (heap_block->next->free) {
