@@ -14,6 +14,8 @@
 - [x] jump to higher half kernel
 - [ ] virtual memory management kmalloc, kfree, krealloc, kcalloc
     - [ ] heap implementation
+    - [ ] all heap blocks be aligned to 8/16bits? am i bothered? google firstfit vs bestfit
+    - [ ] add tests for kmalloc kfree
 - [ ] move tests over to using mrt_test framework. (after kmalloc implementation)
 - [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
