@@ -16,6 +16,8 @@ void *memmove(void *, const void *, size_t);
 void *memset(void *, int, size_t);
 void *memchr(const void *src, int c, size_t n);
 size_t strlen(const char *);
+char *strcpy(char *restrict dst, const char *restrict src);
+char *strncpy(char *restrict dst, const char *restrict src, size_t dsize);
 
 #ifdef __cplusplus
 }
