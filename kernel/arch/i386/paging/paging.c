@@ -28,9 +28,7 @@ internal bool page_frames_state_bitmap_test(uint32_t bit);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init paging");
-#endif
 	if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: invalid memory map given by grub bootloader");
 	}
@@ -80,9 +78,7 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 	_loadPageDirectory((uintptr_t)page_directory_phys);
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init paging OK");
-#endif
 }
 
 internal void pmm_frames_init(multiboot_info_t *mbd)
@@ -93,10 +89,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	page_frames_start_addr = 0x0;
 	page_frames_len = MAX_PAGE_FRAME_COUNT;
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Initialized %d frames as USED",
 			    MAX_PAGE_FRAME_COUNT);
-#endif
 
 	mmap_entry_t *entry = (mmap_entry_t *)mbd->mmap_addr;
 	while ((uint32_t)entry < mbd->mmap_addr + mbd->mmap_length) {
@@ -109,11 +103,9 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			// align to page boundaries
 			start = (start + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 			end = end & ~(PAGE_SIZE - 1);
-#ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"Found AVAILABLE RAM: 0x%x - 0x%x: %u bytes",
 				start, end, length);
-#endif
 
 			for (uintptr_t addr = start; addr < end;
 			     addr += PAGE_SIZE) {
@@ -125,12 +117,10 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			}
 		}
 		else {
-#ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"Found RESERVED Region: 0x%x - 0x%x",
 				entry->addr_low,
 				entry->addr_low + entry->len_low);
-#endif
 		}
 
 		entry = (mmap_entry_t *)((unsigned int)entry + entry->size +
@@ -143,20 +133,16 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	uint32_t start_idx = k_start / PAGE_SIZE;
 	uint32_t end_idx = (k_end / PAGE_SIZE) + 1;
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER(
 		"Protecting Kernel Memory: 0x%x - 0x%x (Pages %d to %d)",
 		k_start, k_end, start_idx, end_idx);
-#endif
 	for (uint32_t i = start_idx; i < end_idx; i++) {
 		if (i < MAX_PAGE_FRAME_COUNT) {
 			page_frames_state_bitmap_set(i);
 		}
 	}
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
-#endif
 	for (int i = 0; i < 256; i++) {
 		page_frames_state_bitmap_set(i);
 	}
@@ -174,10 +160,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 
 	total_free_memory = (uint64_t)free_page_count * PAGE_SIZE;
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("Initialization Complete. Total Free Memory: %u MB",
 			    (free_page_count * 4) / 1024);
-#endif
 }
 
 internal page_t *kmalloc_frame_int(void)
@@ -197,9 +181,7 @@ internal page_t *kmalloc_frame_int(void)
 		}
 	}
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
-#endif
 	return NULL;
 }
 

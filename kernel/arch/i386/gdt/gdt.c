@@ -13,9 +13,7 @@ global_variable struct tss_entry tss_entry;
 
 void gdt_init(void)
 {
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init gdt");
-#endif
 
 	gdt_ptr.limit = sizeof(gdt_entries) - 1;
 	gdt_ptr.base = (uint32_t)&gdt_entries;
@@ -40,9 +38,7 @@ void gdt_init(void)
 
 	_tss_flush((uint32_t)&tss_entry);
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init gdt OK");
-#endif
 }
 
 void gdt_gate_set(uint32_t num, uint32_t base, uint32_t limit, uint8_t access,

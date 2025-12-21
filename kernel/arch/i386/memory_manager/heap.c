@@ -19,9 +19,7 @@ internal void block_merge_down(struct heap_block *block);
 
 void heap_init(void)
 {
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init heap");
-#endif
 
 	uintptr_t virt_base = (uintptr_t)P2V(0);
 	uintptr_t page_table_size = PAGE_SIZE * 1024; // 4MB
@@ -47,10 +45,8 @@ void heap_init(void)
 	heap_start = block_set_metadata((void *)heap_start_addr, EOM_FALSE,
 					HEAP_BLOCK_FREE, heap_end);
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("heap start: 0x%x", heap_start_addr);
 	KERNEL_DEBUG_LOGGER("init heap OK");
-#endif
 }
 
 int brk(void *addr)
@@ -91,9 +87,7 @@ void *kmalloc(size_t size)
 	// more allocation needed
 	void *new_block = sbrk(size + sizeof(struct heap_block));
 	if (new_block == (void *)-1) {
-#ifdef DEBUG
 		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d", (int32_t)size);
-#endif
 		return NULL;
 	}
 
@@ -114,11 +108,9 @@ void *kmalloc(size_t size)
 void kfree(void *ptr)
 {
 	struct heap_block *heap_block = (struct heap_block *)ptr - 1;
-#ifdef DEBUG
 	if (heap_block->free) {
 		KERNEL_DEBUG_LOGGER("DOUBLE FREE attempted at 0x%x", ptr);
 	}
-#endif
 
 	heap_block->free = HEAP_BLOCK_FREE;
 
@@ -195,10 +187,8 @@ internal void *increment_brk(uintptr_t increment)
 
 			int res = vmm_page_map((uintptr_t)page, vaddr, 0x3);
 			if (res != 0) {
-#ifdef DEBUG
 				KERNEL_DEBUG_LOGGER("failed to map VIRT 0x%x",
 						    vaddr);
-#endif
 				kfree_frame(page);
 				// TODO unmap all the pages alloced
 				return (void *)-1;
@@ -208,9 +198,7 @@ internal void *increment_brk(uintptr_t increment)
 	}
 	program_break_point = new_program_break;
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
-#endif
 
 	return (void *)old_program_break;
 }
@@ -230,19 +218,15 @@ internal void *decrement_brk(uintptr_t decrement)
 		kfree_frame(V2P(page_addr));
 		int err = vmm_page_unmap((uintptr_t)page_addr);
 		if (err != 0) {
-#ifdef DEBUG
 			KERNEL_DEBUG_LOGGER(
 				"failed to unmap PHYS 0x%x from VIRT 0x%x",
 				(uintptr_t)V2P(page_addr),
 				(uintptr_t)page_addr);
-#endif
 		}
 		program_break_point -= PAGE_SIZE;
 	}
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("new heap end %x", program_break_point);
-#endif
 
 	return (void *)old_program_break;
 }

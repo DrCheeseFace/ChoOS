@@ -29,9 +29,7 @@ void tty_init(void)
 		}
 	}
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("tty init OK");
-#endif
 }
 
 void terminal_setcolor(uint8_t color)

@@ -53,9 +53,7 @@ internal void idt_gate_set(uint8_t num, uint32_t base, uint16_t sel,
 
 void idt_init(void)
 {
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init idt");
-#endif
 
 	idt_ptr.limit = sizeof(idt_entries) - 1;
 	idt_ptr.base = (uint32_t)&idt_entries;
@@ -195,9 +193,7 @@ void idt_init(void)
 
 	_idt_flush((uint32_t)&idt_ptr);
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("init idt OK");
-#endif
 }
 
 internal void idt_gate_set(uint8_t num, uint32_t base, uint16_t sel,

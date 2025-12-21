@@ -20,6 +20,7 @@
 - [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
 - [ ] processes, schedule(), yield() etc
+- [ ] figure out why it when DDEBUG flag is off. why is it trying to run the kernellog command when i say NO WHY
 
 # TODO implementations
 paddr_t vmm_virt_to_phys(vaddr_t virt)

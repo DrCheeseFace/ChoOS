@@ -22,7 +22,17 @@ uint8_t inb(uint16_t port);
 void kernel_debug_logger(const char *filename, int line, const char *format,
 			 ...);
 
+#ifdef DEBUG
 #define KERNEL_DEBUG_LOGGER(fmt, ...)                                          \
 	kernel_debug_logger(__FILE__, __LINE__, fmt, ##__VA_ARGS__)
+#else
+#define KERNEL_DEBUG_LOGGER(fmt, ...)                                          \
+	do {                                                                   \
+		if (0) {                                                       \
+			kernel_debug_logger(__FILE__, __LINE__, fmt,           \
+					    ##__VA_ARGS__);                    \
+		}                                                              \
+	} while (0)
+#endif
 
 #endif

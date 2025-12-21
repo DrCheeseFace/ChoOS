@@ -277,9 +277,7 @@ void irq_1_handler(unused struct registers_t *regs);
 
 void keyboard_init(void)
 {
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("initing keyboard input");
-#endif
 
 	CTRL_pressed = FALSE;
 	SHIFT_pressed = FALSE;
@@ -287,9 +285,7 @@ void keyboard_init(void)
 
 	irq_install_handler(1, &irq_1_handler);
 
-#ifdef DEBUG
 	KERNEL_DEBUG_LOGGER("initing keyboard OK");
-#endif
 }
 
 void irq_1_handler(unused struct registers_t *regs)
