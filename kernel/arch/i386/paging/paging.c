@@ -20,7 +20,7 @@ global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 global_variable uint64_t total_free_memory = 0;
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
-internal page_t *kmalloc_frame_int(void);
+internal page_t *pmm_alloc_frame_int(void);
 
 internal void page_frames_state_bitmap_set(uint32_t bit);
 internal void page_frames_state_bitmap_unset(uint32_t bit);
@@ -39,42 +39,43 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 	pmm_frames_init(mbd);
 
-	page_t *page_directory_phys = kmalloc_frame_int();
+	page_t *page_directory_phys = pmm_alloc_frame_int();
 	if (page_directory_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
 	page_directory = P2V(page_directory_phys);
-	memset(page_directory, 0, PAGE_SIZE);
+	memset(page_directory_phys, 0, PAGE_SIZE);
 
-	page_t *first_page_table_phys = kmalloc_frame_int();
-	if (first_page_table_phys == NULL) {
+	page_t *first_page_table = pmm_alloc_frame_int();
+	if (first_page_table == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
-	page_t *first_page_table_virt = P2V(first_page_table_phys);
-	memset(first_page_table_virt, 0, PAGE_SIZE);
+	memset(first_page_table, 0, PAGE_SIZE);
 
 	for (uint32_t i = 0; i < PAGES_PER_TABLE; i++) {
-		first_page_table_virt[i].frame = i;
-		first_page_table_virt[i].present = 1;
-		first_page_table_virt[i].rw = 1;
-		first_page_table_virt[i].user = 0;
+		first_page_table[i].frame = i;
+		first_page_table[i].present = 1;
+		first_page_table[i].rw = 1;
+		first_page_table[i].user = 0;
 	}
 
-	page_directory[0].frame =
-		((uintptr_t)first_page_table_phys) >> PAGE_SHIFT;
-	page_directory[0].present = 1;
-	page_directory[0].rw = 1;
+	page_directory_phys[0].frame =
+		((uintptr_t)first_page_table) >> PAGE_SHIFT;
+	page_directory_phys[0].present = 1;
+	page_directory_phys[0].rw = 1;
+	page_directory_phys[0].user = 0;
 
-	page_directory[768].frame =
-		((uintptr_t)first_page_table_phys) >> PAGE_SHIFT;
-	page_directory[768].present = 1;
-	page_directory[768].rw = 1;
-	page_directory[768].user = 0;
+	page_directory_phys[768].frame =
+		((uintptr_t)first_page_table) >> PAGE_SHIFT;
+	page_directory_phys[768].present = 1;
+	page_directory_phys[768].rw = 1;
+	page_directory_phys[768].user = 0;
 
-	page_directory[1023].frame =
-		((uintptr_t)page_directory_phys) >> PAGE_SHIFT;
-	page_directory[1023].present = 1;
-	page_directory[1023].rw = 1;
+	page_directory_phys[1023].frame =
+		((uintptr_t)page_directory_phys >> PAGE_SHIFT);
+	page_directory_phys[1023].present = 1;
+	page_directory_phys[1023].rw = 1;
+	page_directory_phys[1023].user = 0;
 
 	_loadPageDirectory((uintptr_t)page_directory_phys);
 
@@ -164,7 +165,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			    (free_page_count * 4) / 1024);
 }
 
-internal page_t *kmalloc_frame_int(void)
+internal page_t *pmm_alloc_frame_int(void)
 {
 	for (size_t i = 0; i < BITMAP_SIZE; i++) {
 		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
@@ -185,14 +186,14 @@ internal page_t *kmalloc_frame_int(void)
 	return NULL;
 }
 
-void kfree_frame(page_t *a)
+void pmm_free_page(page_t *a)
 {
 	uintptr_t phys_addr = (uintptr_t)a;
 	uint32_t index = phys_addr / PAGE_SIZE;
 	page_frames_state_bitmap_unset(index);
 }
 
-page_t *kmalloc_page(void)
+page_t *pmm_alloc_page(void)
 {
 	local_persist uint8_t allocate = 1;
 	local_persist uint8_t pframe = 0;
@@ -204,7 +205,7 @@ page_t *kmalloc_page(void)
 
 	if (allocate == 1) {
 		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			page_t *frame = kmalloc_frame_int();
+			page_t *frame = pmm_alloc_frame_int();
 			if (frame == NULL) {
 				return NULL;
 			}

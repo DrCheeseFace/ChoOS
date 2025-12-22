@@ -4,7 +4,7 @@
 #include <kernel/misc.h>
 #include <stdint.h>
 
-#define VGA_BUFFER_ADDR 0xB8000
+#define VGA_BUFFER_ADDR 0xC00B8000
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 

@@ -11,13 +11,12 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 
 	// create table
 	if (!page_directory_entry->present) {
-		page_t *new_frame = kmalloc_page();
-		if (new_frame == NULL) {
+		page_t *new_table_phys = pmm_alloc_page();
+		if (!new_table_phys) {
 			return ENOMEM;
 		}
-
 		page_directory_entry->frame =
-			((uintptr_t)new_frame) >> PAGE_SHIFT;
+			((uintptr_t)new_table_phys) >> PAGE_SHIFT;
 		page_directory_entry->present = 1;
 		page_directory_entry->rw = 1;
 		page_directory_entry->user = 1;
@@ -34,9 +33,10 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 	page_table_entry->rw = (flags & 0x2) ? 1 : 0;
 	page_table_entry->user = (flags & 0x4) ? 1 : 0;
 
+	_tlb_flush(virt);
+
 	KERNEL_DEBUG_LOGGER("Mapped Virt 0x%x to Phys 0x%x", virt, phys);
 
-	_tlb_flush(virt);
 	return 0;
 }
 

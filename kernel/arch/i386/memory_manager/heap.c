@@ -180,7 +180,7 @@ internal void *increment_brk(uintptr_t increment)
 	if (new_mapped_top > current_mapped_top) {
 		uintptr_t vaddr = current_mapped_top;
 		while (vaddr < new_mapped_top) {
-			page_t *page = kmalloc_page();
+			page_t *page = pmm_alloc_page();
 			if (page == NULL) {
 				return (void *)-1;
 			}
@@ -189,7 +189,7 @@ internal void *increment_brk(uintptr_t increment)
 			if (res != 0) {
 				KERNEL_DEBUG_LOGGER("failed to map VIRT 0x%x",
 						    vaddr);
-				kfree_frame(page);
+				pmm_free_page(page);
 				// TODO unmap all the pages alloced
 				return (void *)-1;
 			}
@@ -215,7 +215,7 @@ internal void *decrement_brk(uintptr_t decrement)
 	while (program_break_point - PAGE_SIZE >= new_program_break) {
 		void *page_addr = (void *)(program_break_point - PAGE_SIZE);
 
-		kfree_frame(V2P(page_addr));
+		pmm_free_page(V2P(page_addr));
 		int err = vmm_page_unmap((uintptr_t)page_addr);
 		if (err != 0) {
 			KERNEL_DEBUG_LOGGER(

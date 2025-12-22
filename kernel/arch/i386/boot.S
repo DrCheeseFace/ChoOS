@@ -50,7 +50,7 @@ _start:
     loop 1b
 
     # map vga video memory to 0xc03ff000
-    movl $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
+    ; movl $(0x000B8000 | 0x003), boot_page_table1 - 0xC0000000 + 1023 * 4
 
     # Identity Map (Entry 0)
     movl $(boot_page_table1 - 0xC0000000 + 0x003), boot_page_directory - 0xC0000000 + 0

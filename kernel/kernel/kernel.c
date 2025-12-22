@@ -14,9 +14,7 @@
 
 void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 {
-#ifndef DEBUG
 	KERNEL_DEBUG_LOGGER("entry: kernel_main");
-#endif
 
 	tty_init();
 	gdt_init();
