@@ -2,7 +2,8 @@
 #include <kernel/misc.h>
 #include <stdbool.h>
 
-void *block_set_metadata(struct HeapBlock *dst, bool EOM, bool free, void *next)
+void *heap_block_set_metadata(struct HeapBlock *dst, bool EOM, bool free,
+			      void *next)
 {
 	struct HeapBlock *heap_end = dst;
 	heap_end->EOM = EOM;

@@ -5,8 +5,8 @@
 #include <stddef.h>
 #include <string.h>
 
-internal void block_split(struct HeapBlock *block, size_t size);
-internal void block_merge_down(struct HeapBlock *block);
+internal void heap_block_split(struct HeapBlock *block, size_t size);
+internal void heap_block_merge_down(struct HeapBlock *block);
 
 void *kmalloc(size_t size)
 {
@@ -17,7 +17,7 @@ void *kmalloc(size_t size)
 			 ((uintptr_t)node - sizeof(struct HeapBlock)));
 
 		if (node->free && available_space >= size) {
-			block_split(node, size);
+			heap_block_split(node, size);
 			node->free = HEAP_BLOCK_USED;
 			return node + 1; // return memory within heap block
 		}
@@ -34,11 +34,11 @@ void *kmalloc(size_t size)
 		(struct HeapBlock *)program_break_point - 1;
 	memset((void *)node, 0, sizeof(struct HeapBlock));
 
-	block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
-			   (struct HeapBlock *)program_break_point - 1);
+	heap_block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
+				(struct HeapBlock *)program_break_point - 1);
 
-	struct HeapBlock *new_allocation =
-		block_set_metadata(heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+	struct HeapBlock *new_allocation = heap_block_set_metadata(
+		heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	return new_allocation;
 }
@@ -53,7 +53,7 @@ void kfree(void *ptr)
 	heap_block->free = HEAP_BLOCK_FREE;
 
 	if (heap_block->next->free) {
-		block_merge_down(heap_block);
+		heap_block_merge_down(heap_block);
 	}
 
 	if (heap_block == heap_start) {
@@ -65,16 +65,16 @@ void kfree(void *ptr)
 		parent_block = parent_block->next;
 	}
 	if (parent_block->free) {
-		block_merge_down(parent_block);
+		heap_block_merge_down(parent_block);
 	}
 }
 
-internal void block_merge_down(struct HeapBlock *block)
+internal void heap_block_merge_down(struct HeapBlock *block)
 {
 	block->next = block->next->next;
 }
 
-internal void block_split(struct HeapBlock *block, size_t size)
+internal void heap_block_split(struct HeapBlock *block, size_t size)
 {
 	size_t available_space =
 		((uintptr_t)block->next -
@@ -90,7 +90,7 @@ internal void block_split(struct HeapBlock *block, size_t size)
 		((uintptr_t)block + sizeof(struct HeapBlock) + size);
 
 	struct HeapBlock *new_block =
-		block_set_metadata((void *)new_block_addr, EOM_FALSE,
-				   HEAP_BLOCK_FREE, block->next);
+		heap_block_set_metadata((void *)new_block_addr, EOM_FALSE,
+					HEAP_BLOCK_FREE, block->next);
 	block->next = new_block;
 }
