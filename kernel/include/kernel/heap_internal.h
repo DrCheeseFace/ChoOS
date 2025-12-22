@@ -7,7 +7,7 @@
 extern uintptr_t program_break_point;
 extern struct HeapBlock *heap_start;
 
-void *heap_block_set_metadata(struct HeapBlock *dst, bool EOM, bool free,
-			      void *next);
+void *internal_heap_block_set_metadata(struct HeapBlock *dst, bool EOM,
+				       bool free, void *next);
 
 #endif //! _KERNEL_HEAP_INTERNAL_H

@@ -56,12 +56,19 @@ internal int test_kmalloc(void)
 {
 	kernel_test_logger("TEST: kmalloc()");
 
-	const char *str = "askdjasdkjasdkj\n";
-	char *my_heap_bytes = kmalloc(strlen(str) + 1);
-	strncpy(my_heap_bytes, str, strlen(str));
+	const char *str1 = "askdjasdkjasdkj\n";
+	char *my_heap_bytes = kmalloc(strlen(str1) + 1);
+	strncpy(my_heap_bytes, str1, strlen(str1) + 1);
 	printf("%s", my_heap_bytes);
+
 	kfree(my_heap_bytes);
-	// kfree(my_heap_bytes);
+
+	const char *str2 = "HIHIIHIIH\n";
+	char *my_heap_bytes_2 = kmalloc(strlen(str2) + 1);
+	strncpy(my_heap_bytes_2, str2, strlen(str2) + 1);
+	printf("%s", my_heap_bytes_2);
+
+	kfree(my_heap_bytes_2);
 
 	return 0;
 }

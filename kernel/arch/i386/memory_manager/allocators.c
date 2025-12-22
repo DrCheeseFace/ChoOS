@@ -34,10 +34,11 @@ void *kmalloc(size_t size)
 		(struct HeapBlock *)program_break_point - 1;
 	memset((void *)node, 0, sizeof(struct HeapBlock));
 
-	heap_block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
-				(struct HeapBlock *)program_break_point - 1);
+	internal_heap_block_set_metadata(
+		node, EOM_FALSE, HEAP_BLOCK_USED,
+		(struct HeapBlock *)program_break_point - 1);
 
-	struct HeapBlock *new_allocation = heap_block_set_metadata(
+	struct HeapBlock *new_allocation = internal_heap_block_set_metadata(
 		heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	return new_allocation;
@@ -90,7 +91,8 @@ internal void heap_block_split(struct HeapBlock *block, size_t size)
 		((uintptr_t)block + sizeof(struct HeapBlock) + size);
 
 	struct HeapBlock *new_block =
-		heap_block_set_metadata((void *)new_block_addr, EOM_FALSE,
-					HEAP_BLOCK_FREE, block->next);
+		internal_heap_block_set_metadata((void *)new_block_addr,
+						 EOM_FALSE, HEAP_BLOCK_FREE,
+						 block->next);
 	block->next = new_block;
 }

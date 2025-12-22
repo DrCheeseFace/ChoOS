@@ -30,13 +30,13 @@ void heap_init(void)
 	program_break_point = hard_limit_addr;
 
 	// init end block
-	struct HeapBlock *heap_end =
-		heap_block_set_metadata((struct HeapBlock *)hard_limit_addr - 1,
-					EOM_TRUE, HEAP_BLOCK_USED, NULL);
+	struct HeapBlock *heap_end = internal_heap_block_set_metadata(
+		(struct HeapBlock *)hard_limit_addr - 1, EOM_TRUE,
+		HEAP_BLOCK_USED, NULL);
 
 	// init start block
-	heap_start = heap_block_set_metadata((void *)heap_start_addr, EOM_FALSE,
-					     HEAP_BLOCK_FREE, heap_end);
+	heap_start = internal_heap_block_set_metadata(
+		(void *)heap_start_addr, EOM_FALSE, HEAP_BLOCK_FREE, heap_end);
 
 	KERNEL_DEBUG_LOGGER("heap start: 0x%x", heap_start_addr);
 	KERNEL_DEBUG_LOGGER("init heap OK");

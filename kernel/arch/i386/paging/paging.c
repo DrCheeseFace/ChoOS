@@ -1,6 +1,7 @@
 #include <kernel/gdt.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
+#include <kernel/paging_internal.h>
 #include <kernel/utils.h>
 
 #include <stdbool.h>
@@ -10,21 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define BITMAP_SIZE (MAX_PAGE_FRAME_COUNT / 32)
-
 global_variable Page *page_directory;
-global_variable uint32_t page_frames_state_bitmap[BITMAP_SIZE];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
-global_variable Page *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 global_variable uint64_t total_free_memory = 0;
+uint32_t page_frames_state_bitmap[BITMAP_SIZE];
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
-internal Page *pmm_alloc_frame_int(void);
-
-internal void page_frames_state_bitmap_set(uint32_t bit);
-internal void page_frames_state_bitmap_unset(uint32_t bit);
-internal bool page_frames_state_bitmap_test(uint32_t bit);
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 {
@@ -112,7 +105,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			     addr += PAGE_SIZE) {
 				uint32_t page_idx = addr / PAGE_SIZE;
 				if (page_idx < MAX_PAGE_FRAME_COUNT) {
-					page_frames_state_bitmap_unset(
+					internal_pafe_frames_state_bitmap_unset(
 						page_idx);
 				}
 			}
@@ -139,13 +132,13 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 		k_start, k_end, start_idx, end_idx);
 	for (uint32_t i = start_idx; i < end_idx; i++) {
 		if (i < MAX_PAGE_FRAME_COUNT) {
-			page_frames_state_bitmap_set(i);
+			internal_page_frames_state_bitmap_set(i);
 		}
 	}
 
 	KERNEL_DEBUG_LOGGER("Protecting Lower Memory");
 	for (int i = 0; i < 256; i++) {
-		page_frames_state_bitmap_set(i);
+		internal_page_frames_state_bitmap_set(i);
 	}
 
 	int free_page_count = 0;
@@ -165,82 +158,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			    (free_page_count * 4) / 1024);
 }
 
-internal Page *pmm_alloc_frame_int(void)
-{
-	for (size_t i = 0; i < BITMAP_SIZE; i++) {
-		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
-			for (int j = 0; j < 32; j++) {
-				int bit_idx = i * 32 + j;
-				if (!page_frames_state_bitmap_test(bit_idx)) {
-					page_frames_state_bitmap_set(bit_idx);
-
-					uintptr_t frame_phys_addr =
-						bit_idx * PAGE_SIZE;
-					return (void *)frame_phys_addr;
-				}
-			}
-		}
-	}
-
-	KERNEL_DEBUG_LOGGER("WARNING: run out of page frames");
-	return NULL;
-}
-
-void pmm_free_page(Page *a)
-{
-	uintptr_t phys_addr = (uintptr_t)a;
-	uint32_t index = phys_addr / PAGE_SIZE;
-	page_frames_state_bitmap_unset(index);
-}
-
-Page *pmm_alloc_page(void)
-{
-	local_persist uint8_t allocate = 1;
-	local_persist uint8_t pframe = 0;
-	Page *ret;
-
-	if (pframe == BATCH_PAGES_ALLOCED_MAX) {
-		allocate = 1;
-	}
-
-	if (allocate == 1) {
-		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			Page *frame = pmm_alloc_frame_int();
-			if (frame == NULL) {
-				return NULL;
-			}
-			pre_frames[i] = frame;
-		}
-		pframe = 0;
-		allocate = 0;
-	}
-	ret = pre_frames[pframe];
-	pframe++;
-
-	return ret;
-}
-
 uint64_t __get_total_free_memory(void)
 {
 	return total_free_memory;
-}
-
-#define INDEX_FROM_BIT(a) (a / 32)
-#define OFFSET_FROM_BIT(a) (a % 32)
-internal void page_frames_state_bitmap_set(uint32_t bit)
-{
-	page_frames_state_bitmap[INDEX_FROM_BIT(bit)] |=
-		(1 << OFFSET_FROM_BIT(bit));
-}
-
-internal void page_frames_state_bitmap_unset(uint32_t bit)
-{
-	page_frames_state_bitmap[INDEX_FROM_BIT(bit)] &=
-		~(1 << OFFSET_FROM_BIT(bit));
-}
-
-internal bool page_frames_state_bitmap_test(uint32_t bit)
-{
-	return page_frames_state_bitmap[INDEX_FROM_BIT(bit)] &
-	       (1 << OFFSET_FROM_BIT(bit));
 }
