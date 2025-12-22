@@ -9,8 +9,8 @@
 #define MINIMUM_ALLOCATION_BYTES 16
 
 // TODO add magic padding
-struct heap_block {
-	struct heap_block *next;
+struct HeapBlock {
+	struct HeapBlock *next;
 #define EOM_TRUE 1
 #define EOM_FALSE 0
 	uint8_t EOM;

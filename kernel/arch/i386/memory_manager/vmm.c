@@ -7,11 +7,11 @@
 
 int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 {
-	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
+	Page *page_directory_entry = (Page *)GET_PDE_PTR(virt);
 
 	// create table
 	if (!page_directory_entry->present) {
-		page_t *new_table_phys = pmm_alloc_page();
+		Page *new_table_phys = pmm_alloc_page();
 		if (!new_table_phys) {
 			return ENOMEM;
 		}
@@ -27,7 +27,7 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 		memset((void *)page_table_virt_start, 0, PAGE_SIZE);
 	}
 
-	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
+	Page *page_table_entry = (Page *)GET_PTE_PTR(virt);
 	page_table_entry->frame = phys >> PAGE_SHIFT;
 	page_table_entry->present = 1;
 	page_table_entry->rw = (flags & 0x2) ? 1 : 0;
@@ -42,7 +42,7 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 
 int vmm_page_unmap(vaddr_t virt)
 {
-	page_t *page_directory_entry = (page_t *)GET_PDE_PTR(virt);
+	Page *page_directory_entry = (Page *)GET_PDE_PTR(virt);
 	if (!page_directory_entry->present) {
 		KERNEL_DEBUG_LOGGER(
 			"vmm_unmap_page failed. page directory entry not present for Virt 0x%x",
@@ -50,7 +50,7 @@ int vmm_page_unmap(vaddr_t virt)
 		return -1;
 	}
 
-	page_t *page_table_entry = (page_t *)GET_PTE_PTR(virt);
+	Page *page_table_entry = (Page *)GET_PTE_PTR(virt);
 	if (!page_table_entry->present) {
 		KERNEL_DEBUG_LOGGER("Virt 0x%x already not present", virt);
 		return 0;

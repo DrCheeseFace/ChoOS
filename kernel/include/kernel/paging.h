@@ -32,7 +32,7 @@ typedef struct {
 	uint32_t global : 1;
 	uint32_t available : 3;
 	uint32_t frame : 20;
-} __attribute__((packed)) page_t;
+} __attribute__((packed)) Page;
 
 extern uint8_t _kernel_end[];
 extern uint8_t _kernel_start[];
@@ -41,11 +41,11 @@ typedef multiboot_memory_map_t mmap_entry_t;
 
 void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd);
 
-void pmm_free_page(page_t *a);
+void pmm_free_page(Page *a);
 
 // returns page_t if ok
 // returns NULL if ran out of memory
-page_t *pmm_alloc_page(void);
+Page *pmm_alloc_page(void);
 
 uint64_t __get_total_free_memory(void);
 

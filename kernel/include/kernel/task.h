@@ -4,13 +4,13 @@
 #include <kernel/utils.h>
 #include <stdint.h>
 
-struct process {
-	struct registers_t regs;
+struct Process {
+	struct Registers regs;
 	uint32_t cr3;
-	struct process *next;
+	struct Process *next;
 } __attribute__((packed));
 
-void switch_task_irq0_handler(struct registers_t *regs);
+void switch_task_irq0_handler(struct Registers *regs);
 
 void init_process_queue(int32_t kernel_directory_ptr);
 

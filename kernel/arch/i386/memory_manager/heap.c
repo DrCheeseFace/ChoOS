@@ -7,15 +7,15 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct heap_block *heap_start = NULL;
+struct HeapBlock *heap_start = NULL;
 uintptr_t program_break_point = 0;
 
 internal void *increment_brk(uintptr_t increment);
 internal void *decrement_brk(uintptr_t decrement);
-internal void block_split(struct heap_block *block, size_t size);
-internal void *block_set_metadata(struct heap_block *dst, bool EOM, bool free,
+internal void block_split(struct HeapBlock *block, size_t size);
+internal void *block_set_metadata(struct HeapBlock *dst, bool EOM, bool free,
 				  void *next);
-internal void block_merge_down(struct heap_block *block);
+internal void block_merge_down(struct HeapBlock *block);
 
 void heap_init(void)
 {
@@ -37,8 +37,8 @@ void heap_init(void)
 	program_break_point = hard_limit_addr;
 
 	// init end block
-	struct heap_block *heap_end =
-		block_set_metadata((struct heap_block *)hard_limit_addr - 1,
+	struct HeapBlock *heap_end =
+		block_set_metadata((struct HeapBlock *)hard_limit_addr - 1,
 				   EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	// init start block
@@ -72,11 +72,11 @@ void *sbrk(intptr_t increment)
 
 void *kmalloc(size_t size)
 {
-	struct heap_block *node = heap_start;
+	struct HeapBlock *node = heap_start;
 	while (!node->EOM) {
 		size_t available_space =
 			((uintptr_t)node->next -
-			 ((uintptr_t)node - sizeof(struct heap_block)));
+			 ((uintptr_t)node - sizeof(struct HeapBlock)));
 
 		if (node->free && available_space >= size) {
 			block_split(node, size);
@@ -85,21 +85,21 @@ void *kmalloc(size_t size)
 		}
 	}
 	// more allocation needed
-	void *new_block = sbrk(size + sizeof(struct heap_block));
+	void *new_block = sbrk(size + sizeof(struct HeapBlock));
 	if (new_block == (void *)-1) {
 		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d", (int32_t)size);
 		return NULL;
 	}
 
 	// at this point, node is the EOM block.
-	struct heap_block *heap_end =
-		(struct heap_block *)program_break_point - 1;
-	memset((void *)node, 0, sizeof(struct heap_block));
+	struct HeapBlock *heap_end =
+		(struct HeapBlock *)program_break_point - 1;
+	memset((void *)node, 0, sizeof(struct HeapBlock));
 
 	block_set_metadata(node, EOM_FALSE, HEAP_BLOCK_USED,
-			   (struct heap_block *)program_break_point - 1);
+			   (struct HeapBlock *)program_break_point - 1);
 
-	struct heap_block *new_allocation =
+	struct HeapBlock *new_allocation =
 		block_set_metadata(heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
 
 	return new_allocation;
@@ -107,7 +107,7 @@ void *kmalloc(size_t size)
 
 void kfree(void *ptr)
 {
-	struct heap_block *heap_block = (struct heap_block *)ptr - 1;
+	struct HeapBlock *heap_block = (struct HeapBlock *)ptr - 1;
 	if (heap_block->free) {
 		KERNEL_DEBUG_LOGGER("DOUBLE FREE attempted at 0x%x", ptr);
 	}
@@ -122,7 +122,7 @@ void kfree(void *ptr)
 		return;
 	}
 
-	struct heap_block *parent_block = heap_start;
+	struct HeapBlock *parent_block = heap_start;
 	while (parent_block->next != heap_block) {
 		parent_block = parent_block->next;
 	}
@@ -131,36 +131,36 @@ void kfree(void *ptr)
 	}
 }
 
-internal void block_merge_down(struct heap_block *block)
+internal void block_merge_down(struct HeapBlock *block)
 {
 	block->next = block->next->next;
 }
 
-internal void block_split(struct heap_block *block, size_t size)
+internal void block_split(struct HeapBlock *block, size_t size)
 {
 	size_t available_space =
 		((uintptr_t)block->next -
-		 ((uintptr_t)block - sizeof(struct heap_block)));
+		 ((uintptr_t)block - sizeof(struct HeapBlock)));
 
 	// no need to split
-	if (available_space - size - sizeof(struct heap_block) <
+	if (available_space - size - sizeof(struct HeapBlock) <
 	    MINIMUM_ALLOCATION_BYTES) {
 		return;
 	}
 
 	uintptr_t new_block_addr =
-		((uintptr_t)block + sizeof(struct heap_block) + size);
+		((uintptr_t)block + sizeof(struct HeapBlock) + size);
 
-	struct heap_block *new_block =
+	struct HeapBlock *new_block =
 		block_set_metadata((void *)new_block_addr, EOM_FALSE,
 				   HEAP_BLOCK_FREE, block->next);
 	block->next = new_block;
 }
 
-internal void *block_set_metadata(struct heap_block *dst, bool EOM, bool free,
+internal void *block_set_metadata(struct HeapBlock *dst, bool EOM, bool free,
 				  void *next)
 {
-	struct heap_block *heap_end = dst;
+	struct HeapBlock *heap_end = dst;
 	heap_end->EOM = EOM;
 	heap_end->free = free;
 	heap_end->next = next;
@@ -180,7 +180,7 @@ internal void *increment_brk(uintptr_t increment)
 	if (new_mapped_top > current_mapped_top) {
 		uintptr_t vaddr = current_mapped_top;
 		while (vaddr < new_mapped_top) {
-			page_t *page = pmm_alloc_page();
+			Page *page = pmm_alloc_page();
 			if (page == NULL) {
 				return (void *)-1;
 			}

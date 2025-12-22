@@ -8,7 +8,7 @@
 global_variable uint64_t ticks;
 global_variable const uint32_t freq = 1000;
 
-void irq_0_handler(unused struct registers_t *regs);
+void irq_0_handler(unused struct Registers *regs);
 
 void timer_init(void)
 {
@@ -27,7 +27,7 @@ void timer_init(void)
 	KERNEL_DEBUG_LOGGER("init timer OK");
 }
 
-void irq_0_handler(unused struct registers_t *regs)
+void irq_0_handler(unused struct Registers *regs)
 {
 	ticks++;
 }

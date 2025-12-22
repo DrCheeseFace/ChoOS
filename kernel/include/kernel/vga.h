@@ -8,7 +8,7 @@
 #define VGA_WIDTH 80
 #define VGA_HEIGHT 25
 
-enum vga_color {
+enum VgaColor {
 	VGA_COLOR_BLACK = 0,
 	VGA_COLOR_BLUE = 1,
 	VGA_COLOR_GREEN = 2,
@@ -27,7 +27,7 @@ enum vga_color {
 	VGA_COLOR_WHITE = 15,
 };
 
-internal inline uint8_t vga_entry_color(enum vga_color fg, enum vga_color bg)
+internal inline uint8_t vga_entry_color(enum VgaColor fg, enum VgaColor bg)
 {
 	return fg | bg << 4;
 }

@@ -12,15 +12,15 @@
 
 #define BITMAP_SIZE (MAX_PAGE_FRAME_COUNT / 32)
 
-global_variable page_t *page_directory;
+global_variable Page *page_directory;
 global_variable uint32_t page_frames_state_bitmap[BITMAP_SIZE];
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
-global_variable page_t *pre_frames[BATCH_PAGES_ALLOCED_MAX];
+global_variable Page *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 global_variable uint64_t total_free_memory = 0;
 
 internal void pmm_frames_init(multiboot_info_t *mbd);
-internal page_t *pmm_alloc_frame_int(void);
+internal Page *pmm_alloc_frame_int(void);
 
 internal void page_frames_state_bitmap_set(uint32_t bit);
 internal void page_frames_state_bitmap_unset(uint32_t bit);
@@ -39,14 +39,14 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 
 	pmm_frames_init(mbd);
 
-	page_t *page_directory_phys = pmm_alloc_frame_int();
+	Page *page_directory_phys = pmm_alloc_frame_int();
 	if (page_directory_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
 	page_directory = P2V(page_directory_phys);
 	memset(page_directory_phys, 0, PAGE_SIZE);
 
-	page_t *first_page_table = pmm_alloc_frame_int();
+	Page *first_page_table = pmm_alloc_frame_int();
 	if (first_page_table == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for first page table");
 	}
@@ -165,7 +165,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 			    (free_page_count * 4) / 1024);
 }
 
-internal page_t *pmm_alloc_frame_int(void)
+internal Page *pmm_alloc_frame_int(void)
 {
 	for (size_t i = 0; i < BITMAP_SIZE; i++) {
 		if (page_frames_state_bitmap[i] != 0xFFFFFFFF) {
@@ -186,18 +186,18 @@ internal page_t *pmm_alloc_frame_int(void)
 	return NULL;
 }
 
-void pmm_free_page(page_t *a)
+void pmm_free_page(Page *a)
 {
 	uintptr_t phys_addr = (uintptr_t)a;
 	uint32_t index = phys_addr / PAGE_SIZE;
 	page_frames_state_bitmap_unset(index);
 }
 
-page_t *pmm_alloc_page(void)
+Page *pmm_alloc_page(void)
 {
 	local_persist uint8_t allocate = 1;
 	local_persist uint8_t pframe = 0;
-	page_t *ret;
+	Page *ret;
 
 	if (pframe == BATCH_PAGES_ALLOCED_MAX) {
 		allocate = 1;
@@ -205,7 +205,7 @@ page_t *pmm_alloc_page(void)
 
 	if (allocate == 1) {
 		for (int i = 0; i < BATCH_PAGES_ALLOCED_MAX; i++) {
-			page_t *frame = pmm_alloc_frame_int();
+			Page *frame = pmm_alloc_frame_int();
 			if (frame == NULL) {
 				return NULL;
 			}

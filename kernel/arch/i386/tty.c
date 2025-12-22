@@ -37,7 +37,7 @@ void terminal_setcolor(uint8_t color)
 	terminal_color = color;
 }
 
-void terminal_putentryat(unsigned char c, enum vga_color color, size_t x,
+void terminal_putentryat(unsigned char c, enum VgaColor color, size_t x,
 			 size_t y)
 {
 	const size_t index = y * VGA_WIDTH + x;

@@ -5,7 +5,7 @@
 
 #define GDT_OFFSET_KERNEL_CODE 0x08
 
-enum gdt_segment_type {
+enum GdtSegmentType {
 	GDT_SEGMENT_NULL = 0,
 	GDT_SEGMENT_KCODE,
 	GDT_SEGMENT_KDATA,
@@ -37,14 +37,14 @@ typedef struct {
 	uint8_t access;
 	uint8_t flags;
 	uint8_t base_high;
-} __attribute__((packed)) gdt_entry_t;
+} __attribute__((packed)) GdtEntry;
 
 typedef struct {
 	uint16_t limit;
 	uintptr_t base;
-} __attribute__((packed)) gdtr_t;
+} __attribute__((packed)) GdtRegister;
 
-struct tss_entry {
+struct TssEntry {
 	uint32_t prev_tss;
 	uint32_t esp0;
 	uint32_t ss0;

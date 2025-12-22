@@ -7,9 +7,9 @@
 extern void _gdt_flush(uint32_t);
 extern void _tss_flush(uint32_t);
 
-global_variable gdt_entry_t gdt_entries[GDT_SEGMENT_COUNT];
-global_variable gdtr_t gdt_ptr;
-global_variable struct tss_entry tss_entry;
+global_variable GdtEntry gdt_entries[GDT_SEGMENT_COUNT];
+global_variable GdtRegister gdt_ptr;
+global_variable struct TssEntry tss_entry;
 
 void gdt_init(void)
 {

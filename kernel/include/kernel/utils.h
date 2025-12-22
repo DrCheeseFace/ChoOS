@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-struct registers_t {
+struct Registers {
 	uint32_t cr2;
 	uint32_t ds;
 	// general purpose registers

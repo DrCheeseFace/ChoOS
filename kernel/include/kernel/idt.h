@@ -71,20 +71,20 @@ typedef struct {
 	uint8_t always0;
 	uint8_t flags;
 	uint16_t base_high; // The higher 16 bits of the ISR's address
-} __attribute__((packed)) idt_entry_t;
+} __attribute__((packed)) IdtEntry;
 
 typedef struct {
 	uint16_t limit;
 	uint32_t base;
-} __attribute__((packed)) idtr_t;
+} __attribute__((packed)) IdtRegister;
 
 void idt_init(void);
 
-void isr_handler(struct registers_t *regs);
+void isr_handler(struct Registers *regs);
 
-void irq_handler(struct registers_t *regs);
+void irq_handler(struct Registers *regs);
 
-void irq_install_handler(int irq, void (*handler)(struct registers_t *r));
+void irq_install_handler(int irq, void (*handler)(struct Registers *r));
 
 void irq_uninstall_handler(int irq);
 

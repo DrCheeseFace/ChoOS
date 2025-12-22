@@ -41,7 +41,7 @@
 #define KEYBOARD_KEY_ALTGR 0xFFFFFFFF - 31
 #define KEYBOARD_KEY_NUMLCK 0xFFFFFFFF - 32
 
-enum PS2_scancode_set_1 {
+enum PS2ScancodeSet1 {
 	SC_ESC = 0x01,
 	SC_1 = 0x02,
 	SC_2 = 0x03,
@@ -140,7 +140,6 @@ enum PS2_scancode_set_1 {
 
 void keyboard_init(void);
 
-const char *ps2_scancode_to_char(enum PS2_scancode_set_1 scancode,
-				 bool pressed);
+const char *ps2_scancode_to_char(enum PS2ScancodeSet1 scancode, bool pressed);
 
 #endif // !_KERNEL_KEYBOARD_H

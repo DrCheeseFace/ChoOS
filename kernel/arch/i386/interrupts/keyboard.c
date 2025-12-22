@@ -270,10 +270,10 @@ const uint32_t uppercase[128] = { KEYBOARD_KEY_UNKNOWN,
 				  KEYBOARD_KEY_UNKNOWN,
 				  KEYBOARD_KEY_UNKNOWN };
 
-internal bool update_modifier_keys_state(enum PS2_scancode_set_1 scancode,
+internal bool update_modifier_keys_state(enum PS2ScancodeSet1 scancode,
 					 bool press);
-internal void log_key_press(enum PS2_scancode_set_1 scancode);
-void irq_1_handler(unused struct registers_t *regs);
+internal void log_key_press(enum PS2ScancodeSet1 scancode);
+void irq_1_handler(unused struct Registers *regs);
 
 void keyboard_init(void)
 {
@@ -288,7 +288,7 @@ void keyboard_init(void)
 	KERNEL_DEBUG_LOGGER("initing keyboard OK");
 }
 
-void irq_1_handler(unused struct registers_t *regs)
+void irq_1_handler(unused struct Registers *regs)
 {
 	char scancode = inb(PC_AC_KEYBOARD_CONTROLLER_PORT) & 0x7F;
 	char press = inb(PC_AC_KEYBOARD_CONTROLLER_PORT) & 0x80; // down or up
@@ -300,7 +300,7 @@ void irq_1_handler(unused struct registers_t *regs)
 	}
 }
 
-internal bool update_modifier_keys_state(enum PS2_scancode_set_1 scancode,
+internal bool update_modifier_keys_state(enum PS2ScancodeSet1 scancode,
 					 bool press)
 {
 	switch (scancode) {
@@ -321,7 +321,7 @@ internal bool update_modifier_keys_state(enum PS2_scancode_set_1 scancode,
 	return FALSE;
 }
 
-internal void log_key_press(enum PS2_scancode_set_1 scancode)
+internal void log_key_press(enum PS2ScancodeSet1 scancode)
 {
 	if (SHIFT_pressed) {
 		printf("%c", uppercase[scancode]);

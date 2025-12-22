@@ -12,6 +12,7 @@
 internal int test_vmm_aliasing(void);
 internal int test_vmm_unmap_virt(void);
 internal int test_sbrk(void);
+internal int test_kmalloc(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
 
@@ -26,6 +27,7 @@ int test_all(void)
 	err_out = run_test(test_vmm_aliasing, &passed, &total);
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
 	err_out = err_out || run_test(test_sbrk, &passed, &total);
+	err_out = err_out || run_test(test_kmalloc, &passed, &total);
 
 	if (err_out) {
 		kernel_test_logger("TEST: FAILED");
@@ -50,6 +52,20 @@ internal int run_test(int (*test_func)(void), int *passed, int *total)
 	return err_out;
 }
 
+internal int test_kmalloc(void)
+{
+	kernel_test_logger("TEST: kmalloc()");
+
+	const char *str = "askdjasdkjasdkj\n";
+	char *my_heap_bytes = kmalloc(strlen(str) + 1);
+	strncpy(my_heap_bytes, str, strlen(str));
+	printf("%s", my_heap_bytes);
+	kfree(my_heap_bytes);
+	// kfree(my_heap_bytes);
+
+	return 0;
+}
+
 internal int test_sbrk(void)
 {
 	kernel_test_logger("TEST: sbrk()");
@@ -66,7 +82,7 @@ internal int test_sbrk(void)
 	kernel_test_logger("[PASSED]");
 
 	kernel_test_logger("   [2/7] metadata edge case... ");
-	size_t edge_size = PAGE_SIZE - sizeof(struct heap_block) + 10;
+	size_t edge_size = PAGE_SIZE - sizeof(struct HeapBlock) + 10;
 	uint8_t *region2 = (uint8_t *)sbrk(edge_size);
 	ASSERT_MSG(region2 != (void *)-1, "sbrk(edge_size) returned -1");
 	region2[edge_size - 1] = 0xCC;
@@ -143,7 +159,7 @@ internal int test_vmm_aliasing(void)
 {
 	kernel_test_logger("TEST: VMM Aliasing... ");
 
-	page_t *phys_frame = kmalloc_page();
+	Page *phys_frame = pmm_alloc_page();
 	ASSERT_MSG(phys_frame != NULL, "failed to allocate page");
 
 	uintptr_t virt_a = 0xD0000000;
@@ -169,7 +185,7 @@ internal int test_vmm_unmap_virt(void)
 {
 	kernel_test_logger("TEST: VMM Unmapping... ");
 
-	void *phys_frame_ptr = kmalloc_page();
+	void *phys_frame_ptr = pmm_alloc_page();
 	ASSERT_MSG(phys_frame_ptr != NULL, "failed to allocate new page");
 
 	paddr_t phys_addr = (paddr_t)phys_frame_ptr;
@@ -192,7 +208,7 @@ internal int test_vmm_unmap_virt(void)
 	ASSERT_MSG(!err, "vmm_unmap_page returned error");
 	ASSERT_MSG(*ptr_a == 0xDEADBEEF, "Unmapping B corrupted A");
 
-	page_t *page_table_entry_b = (page_t *)GET_PTE_PTR(virt_b);
+	Page *page_table_entry_b = (Page *)GET_PTE_PTR(virt_b);
 	ASSERT_MSG(page_table_entry_b->present != 1,
 		   "virt_b PTE is still marked PRESENT");
 
