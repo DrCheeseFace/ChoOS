@@ -2,12 +2,13 @@
 #include <kernel/misc.h>
 #include <stdbool.h>
 
-void *internal_heap_block_set_metadata(struct HeapBlock *dst, bool EOM,
-				       bool free, void *next)
+struct HeapBlock *internal_heap_block_set_metadata(struct HeapBlock *dst,
+						   bool EOM, bool free,
+						   void *next)
 {
-	struct HeapBlock *heap_end = dst;
-	heap_end->EOM = EOM;
-	heap_end->free = free;
-	heap_end->next = next;
-	return heap_end;
+	struct HeapBlock *heap_block = dst;
+	heap_block->EOM = EOM;
+	heap_block->free = free;
+	heap_block->next = next;
+	return heap_block;
 }
