@@ -13,4 +13,3 @@ menuentry "pissos" {
 }
 EOF
 grub-mkrescue -o pissos.iso isodir
-

@@ -5,43 +5,92 @@
 #include <stddef.h>
 #include <string.h>
 
+#define ALIGNMENT 8
+#define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
+
 internal void heap_block_split(struct HeapBlock *block, size_t size);
 internal void heap_block_merge_down(struct HeapBlock *block);
+internal size_t heap_block_get_available_space(struct HeapBlock *block);
 
 void *kmalloc(size_t size)
 {
+	size_t aligned_size = ALIGN(size);
+
 	struct HeapBlock *node = heap_start;
 	while (!node->EOM) {
-		size_t available_space =
-			((uintptr_t)node->next -
-			 ((uintptr_t)node - sizeof(struct HeapBlock)));
+		size_t available_space = heap_block_get_available_space(node);
 
-		if (node->free && available_space >= size) {
-			heap_block_split(node, size);
+		if (node->free && available_space >= aligned_size) {
+			heap_block_split(node, aligned_size);
 			node->free = HEAP_BLOCK_USED;
 			return node + 1; // return memory within heap block
 		}
+
+		node = node->next;
 	}
 	// more allocation needed
-	void *new_block = sbrk(size + sizeof(struct HeapBlock));
+	void *new_block = sbrk(aligned_size + sizeof(struct HeapBlock));
 	if (new_block == (void *)-1) {
-		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d", (int32_t)size);
+		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d",
+				    (int32_t)aligned_size);
 		return NULL;
 	}
 
-	// at this point, node is the EOM block.
-	struct HeapBlock *heap_end =
-		(struct HeapBlock *)program_break_point - 1;
-	memset((void *)node, 0, sizeof(struct HeapBlock));
-
+	// at this point, node is the old EOM block. start of the newly allocated block
 	internal_heap_block_set_metadata(
 		node, EOM_FALSE, HEAP_BLOCK_USED,
 		(struct HeapBlock *)program_break_point - 1);
 
-	struct HeapBlock *new_allocation = internal_heap_block_set_metadata(
-		heap_end, EOM_TRUE, HEAP_BLOCK_USED, NULL);
+	struct HeapBlock *new_heap_end =
+		(struct HeapBlock *)program_break_point - 1;
+	internal_heap_block_set_metadata(new_heap_end, EOM_TRUE,
+					 HEAP_BLOCK_USED, NULL);
 
-	return new_allocation;
+	node->next = new_heap_end;
+
+	return node + 1;
+}
+
+void *kcalloc(size_t nmemb, size_t size)
+{
+	size_t bytes = nmemb * size;
+
+	void *new_block = kmalloc(bytes);
+	if (!new_block) {
+		return NULL;
+	}
+
+	memset(new_block, 0, bytes);
+	return new_block;
+}
+
+void *krealloc(void *ptr, size_t size)
+{
+	if (!ptr) {
+		return kmalloc(size);
+	}
+
+	if (size == 0) {
+		kfree(ptr);
+		return NULL;
+	}
+
+	struct HeapBlock *original_block = (struct HeapBlock *)ptr - 1;
+
+	size_t available_space = heap_block_get_available_space(original_block);
+	if (available_space >= size) {
+		heap_block_split(original_block, size);
+		return ptr;
+	}
+
+	struct HeapBlock *new_block = kmalloc(size);
+	if (!new_block) {
+		return NULL;
+	}
+
+	memmove(new_block + 1, ptr, available_space);
+	kfree(ptr);
+	return new_block + 1;
 }
 
 void kfree(void *ptr)
@@ -77,13 +126,12 @@ internal void heap_block_merge_down(struct HeapBlock *block)
 
 internal void heap_block_split(struct HeapBlock *block, size_t size)
 {
-	size_t available_space =
-		((uintptr_t)block->next -
-		 ((uintptr_t)block - sizeof(struct HeapBlock)));
+	size_t aligned_size = ALIGN(size);
+	size_t available_space = heap_block_get_available_space(block);
 
 	// no need to split
-	if (available_space - size - sizeof(struct HeapBlock) <
-	    MINIMUM_ALLOCATION_BYTES) {
+	if (available_space < aligned_size + sizeof(struct HeapBlock) +
+				      MINIMUM_ALLOCATION_BYTES) {
 		return;
 	}
 
@@ -95,4 +143,10 @@ internal void heap_block_split(struct HeapBlock *block, size_t size)
 						 EOM_FALSE, HEAP_BLOCK_FREE,
 						 block->next);
 	block->next = new_block;
+}
+
+internal size_t heap_block_get_available_space(struct HeapBlock *block)
+{
+	return ((uintptr_t)block->next -
+		((uintptr_t)block - sizeof(struct HeapBlock)));
 }

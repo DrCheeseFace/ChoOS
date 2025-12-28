@@ -9,11 +9,12 @@
 #include <stdio.h>
 #include <string.h>
 
-global_variable uint16_t *const VGA_MEMORY = (uint16_t *const)VGA_BUFFER_ADDR;
+global_variable volatile uint16_t *const VGA_MEMORY =
+	(uint16_t *const)VGA_BUFFER_ADDR;
 global_variable size_t terminal_row;
 global_variable size_t terminal_column;
 global_variable uint8_t terminal_color;
-global_variable uint16_t *terminal_buffer;
+global_variable volatile uint16_t *terminal_buffer;
 
 void tty_init(void)
 {
@@ -55,7 +56,7 @@ void terminal_scroll(void)
 
 void terminal_delete_last_line(void)
 {
-	uint16_t *ptr = VGA_MEMORY;
+	uint16_t volatile *ptr = VGA_MEMORY;
 	ptr += VGA_WIDTH * (VGA_HEIGHT - 1);
 
 	for (int x = 0; x < (int)VGA_WIDTH; x++) {

@@ -8,7 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-global_variable IdtEntry idt_entries[IDT_MAX_DESCRIPTORS];
+global_variable volatile IdtEntry idt_entries[IDT_MAX_DESCRIPTORS];
 global_variable IdtRegister idt_ptr;
 void (*irq_routines[16])(struct Registers *) = { 0 };
 
@@ -58,7 +58,7 @@ void idt_init(void)
 	idt_ptr.limit = sizeof(idt_entries) - 1;
 	idt_ptr.base = (uint32_t)&idt_entries;
 
-	memset(idt_entries, 0, sizeof(idt_entries));
+	memset((void *)idt_entries, 0, sizeof(idt_entries));
 
 	// initialize PICS
 	outb(PIC1, ICW1_DEFAULT);

@@ -215,7 +215,8 @@ internal int test_vmm_unmap_virt(void)
 	ASSERT_MSG(!err, "vmm_unmap_page returned error");
 	ASSERT_MSG(*ptr_a == 0xDEADBEEF, "Unmapping B corrupted A");
 
-	Page *page_table_entry_b = (Page *)GET_PTE_PTR(virt_b);
+	volatile Page *page_table_entry_b =
+		(volatile Page *)GET_PTE_PTR(virt_b);
 	ASSERT_MSG(page_table_entry_b->present != 1,
 		   "virt_b PTE is still marked PRESENT");
 

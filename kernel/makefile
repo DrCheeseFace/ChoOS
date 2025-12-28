@@ -83,4 +83,3 @@ install-kernel: pissos.kernel
 	cp pissos.kernel $(DESTDIR)$(BOOTDIR)
 
 -include $(OBJS:.o=.d)
-

@@ -11,7 +11,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-global_variable Page *page_directory;
+global_variable volatile Page *page_directory;
 global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
 global_variable uint64_t total_free_memory = 0;

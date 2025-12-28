@@ -1,6 +1,7 @@
 #ifndef _KERNEL_HEAP_H
 #define _KERNEL_HEAP_H
 
+#include <kernel/misc.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -8,7 +9,6 @@
 #define INITIAL_HEAP_SIZE 1024 * 1024
 #define MINIMUM_ALLOCATION_BYTES 16
 
-// TODO add magic padding
 struct HeapBlock {
 	struct HeapBlock *next;
 #define EOM_TRUE 1
@@ -49,7 +49,7 @@ int brk(void *addr);
  *     On error, (void *) -1 is returned, and errno is set to ENOMEM.
  *
  */
-void *sbrk(intptr_t increment);
+void *sbrk(intptr_t increment) WARN_UNUSED;
 
 /*
  *
@@ -58,7 +58,29 @@ void *sbrk(intptr_t increment);
  *     on err(failed to allocate memory), returns NULL
  *
  */
-void *kmalloc(size_t size);
+void *kmalloc(size_t size) WARN_UNUSED;
+
+/*
+ * DESCRIPTION
+ *     kmalloc and sets memory to 0
+ *
+ * RETURNS
+ *     on sucess, pointer to start of newly allocated region of memory
+ *     on err(failed to allocate memory), returns NULL
+ *
+ */
+void *kcalloc(size_t nmemb, size_t size) WARN_UNUSED;
+
+/*
+ * DESCRIPTION
+ *     returns region of size with copied memory from ptr
+ *
+ * RETURNS
+ *     on sucess, pointer to start of newly allocated region of memory
+ *     on err(failed to allocate memory), returns NULL
+ *
+ */
+void *krealloc(void *ptr, size_t size);
 
 void kfree(void *);
 

@@ -8,9 +8,9 @@
 #include <stdint.h>
 #include <stdio.h>
 
-global_variable bool CTRL_pressed;
-global_variable bool SHIFT_pressed;
-global_variable bool ALT_pressed;
+global_variable volatile bool CTRL_pressed;
+global_variable volatile bool SHIFT_pressed;
+global_variable volatile bool ALT_pressed;
 
 const uint32_t lowercase[128] = { KEYBOARD_KEY_UNKNOWN,
 				  KEYBOARD_KEY_ESC,

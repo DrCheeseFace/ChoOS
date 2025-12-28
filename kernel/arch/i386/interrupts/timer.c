@@ -5,7 +5,7 @@
 #include <kernel/tty.h>
 #include <kernel/utils.h>
 
-global_variable uint64_t ticks;
+global_variable volatile uint64_t ticks;
 global_variable const uint32_t freq = 1000;
 
 void irq_0_handler(unused struct Registers *regs);

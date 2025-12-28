@@ -7,9 +7,9 @@
 extern void _gdt_flush(uint32_t);
 extern void _tss_flush(uint32_t);
 
-global_variable GdtEntry gdt_entries[GDT_SEGMENT_COUNT];
+global_variable volatile GdtEntry gdt_entries[GDT_SEGMENT_COUNT];
 global_variable GdtRegister gdt_ptr;
-global_variable struct TssEntry tss_entry;
+global_variable volatile struct TssEntry tss_entry;
 
 void gdt_init(void)
 {
@@ -62,7 +62,7 @@ void tss_write(uint32_t num, uint16_t ss0, uint32_t esp0)
 
 	gdt_gate_set(num, base, limit, 0xE9, 0x0);
 
-	memset(&tss_entry, 0, sizeof(tss_entry));
+	memset((void *)&tss_entry, 0, sizeof(tss_entry));
 
 	tss_entry.ss0 = ss0;
 	tss_entry.esp0 = esp0;

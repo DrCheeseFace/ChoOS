@@ -12,15 +12,15 @@
 - [x] enable paging
 - [x] replace nasm with just S cuz why do both lol
 - [x] jump to higher half kernel
-- [ ] virtual memory management kmalloc, kfree, krealloc, kcalloc
-    - [ ] heap implementation
-    - [ ] all heap blocks be aligned to 8/16bits? am i bothered? google firstfit vs bestfit
+- [x] virtual memory management kmalloc, kfree, krealloc, kcalloc
+    - [x] heap implementation
+    - [x] all heap blocks be aligned to 8/16bits? am i bothered? google firstfit vs bestfit
     - [ ] add tests for kmalloc kfree
 - [ ] move tests over to using mrt_test framework. (after kmalloc implementation)
 - [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
 - [ ] processes, schedule(), yield() etc
-- [ ] figure out why it when DDEBUG flag is off. why is it trying to run the kernellog command when i say NO WHY
+- [x] figure out why it when DDEBUG flag is off. why is it trying to run the kernellog command when i say NO WHY
 
 # TODO implementations
 paddr_t vmm_virt_to_phys(vaddr_t virt)
