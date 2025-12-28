@@ -147,6 +147,10 @@ internal void heap_block_split(struct HeapBlock *block, size_t size)
 
 internal size_t heap_block_get_available_space(struct HeapBlock *block)
 {
-	return ((uintptr_t)block->next -
-		((uintptr_t)block - sizeof(struct HeapBlock)));
+	if (block->EOM) {
+		return 0;
+	}
+
+	return (uintptr_t)block->next - (uintptr_t)block -
+	       sizeof(struct HeapBlock);
 }
