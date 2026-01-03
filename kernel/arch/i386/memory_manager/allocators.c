@@ -83,14 +83,14 @@ void *krealloc(void *ptr, size_t size)
 		return ptr;
 	}
 
-	struct HeapBlock *new_block = kmalloc(size);
+	void *new_block = kmalloc(size);
 	if (!new_block) {
 		return NULL;
 	}
 
-	memmove(new_block + 1, ptr, available_space);
+	memmove(new_block, ptr, available_space);
 	kfree(ptr);
-	return new_block + 1;
+	return new_block;
 }
 
 void kfree(void *ptr)

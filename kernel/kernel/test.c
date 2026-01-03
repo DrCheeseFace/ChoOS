@@ -61,14 +61,14 @@ internal int test_kmalloc(void)
 	strncpy(my_heap_bytes, str1, strlen(str1) + 1);
 	printf("%s", my_heap_bytes);
 
-	kfree(my_heap_bytes);
-
 	const char *str2 = "HIHIIHIIH\n";
 	char *my_heap_bytes_2 = kmalloc(strlen(str2) + 1);
 	strncpy(my_heap_bytes_2, str2, strlen(str2) + 1);
 	printf("%s", my_heap_bytes_2);
+	void *newptr = krealloc(my_heap_bytes, 1024);
 
 	kfree(my_heap_bytes_2);
+	kfree(newptr);
 
 	return 0;
 }
