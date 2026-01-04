@@ -18,7 +18,7 @@ internal int run_test(int (*test_func)(void), int *passed, int *total);
 
 void test_all(void)
 {
-	uint64_t start_time = get_current_process_time_used();
+	uint64_t start_time = get_current_task_time_used();
 
 	kernel_test_logger("TEST: STARTING TESTS");
 
@@ -38,7 +38,7 @@ void test_all(void)
 	}
 
 	kernel_test_logger("    %d/%d passed in %llu microseconds", passed,
-			   total, get_current_process_time_used() - start_time);
+			   total, get_current_task_time_used() - start_time);
 }
 
 internal int run_test(int (*test_func)(void), int *passed, int *total)

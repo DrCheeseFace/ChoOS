@@ -6,7 +6,7 @@
 #include <stddef.h>
 #include <sys/cdefs.h>
 
-#define EOF (-1)
+#define EOF	  (-1)
 #define EOVERFLOW (75)
 
 #ifdef __cplusplus

@@ -1,6 +1,10 @@
 #ifndef _KERNEL_GDT_H
 #define _KERNEL_GDT_H
 
+#define TSS_OFFSET_ESP0 4
+
+#ifndef __ASSEMBLER__
+
 #include <stdint.h>
 
 #define GDT_OFFSET_KERNEL_CODE 0x08
@@ -82,4 +86,5 @@ void gdt_gate_set(uint32_t num, uint32_t base, uint32_t limit, uint8_t access,
 
 void tss_write(uint32_t num, uint16_t ss0, uint32_t esp0);
 
+#endif // !__ASSEMBLER__
 #endif // !

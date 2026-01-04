@@ -7,12 +7,12 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#define INITIAL_HEAP_SIZE 1024 * 1024
+#define INITIAL_HEAP_SIZE	 1024 * 1024
 #define MINIMUM_ALLOCATION_BYTES 16
 
 struct HeapBlock {
 	struct HeapBlock *next;
-#define EOM_TRUE 1
+#define EOM_TRUE  1
 #define EOM_FALSE 0
 	uint8_t EOM;
 #define HEAP_BLOCK_FREE 1

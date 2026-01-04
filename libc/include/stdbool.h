@@ -6,7 +6,7 @@ typedef enum {
 	BOOL_TRUE,
 } bool;
 
-#define TRUE BOOL_TRUE
+#define TRUE  BOOL_TRUE
 #define FALSE BOOL_FALSE
 
 #endif

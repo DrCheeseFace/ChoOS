@@ -5,7 +5,7 @@
 #include <stddef.h>
 #include <string.h>
 
-#define ALIGNMENT 8
+#define ALIGNMENT   8
 #define ALIGN(size) (((size) + (ALIGNMENT - 1)) & ~(ALIGNMENT - 1))
 
 internal void heap_block_split(struct HeapBlock *block, size_t size);

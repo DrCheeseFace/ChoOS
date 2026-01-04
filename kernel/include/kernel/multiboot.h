@@ -24,7 +24,7 @@
 #define MULTIBOOT_HEADER 1
 
 /* How many bytes from the start of the file we search for the header. */
-#define MULTIBOOT_SEARCH 8192
+#define MULTIBOOT_SEARCH       8192
 #define MULTIBOOT_HEADER_ALIGN 4
 
 /* The magic field should contain this. */
@@ -87,7 +87,7 @@
 #define MULTIBOOT_INFO_APM_TABLE 0x00000400
 
 /* Is there video information? */
-#define MULTIBOOT_INFO_VBE_INFO 0x00000800
+#define MULTIBOOT_INFO_VBE_INFO		0x00000800
 #define MULTIBOOT_INFO_FRAMEBUFFER_INFO 0x00001000
 
 #ifndef ASM_FILE
@@ -193,8 +193,8 @@ struct multiboot_info {
 	multiboot_uint32_t framebuffer_width;
 	multiboot_uint32_t framebuffer_height;
 	multiboot_uint8_t framebuffer_bpp;
-#define MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED 0
-#define MULTIBOOT_FRAMEBUFFER_TYPE_RGB 1
+#define MULTIBOOT_FRAMEBUFFER_TYPE_INDEXED  0
+#define MULTIBOOT_FRAMEBUFFER_TYPE_RGB	    1
 #define MULTIBOOT_FRAMEBUFFER_TYPE_EGA_TEXT 2
 	multiboot_uint8_t framebuffer_type;
 	union {
@@ -226,11 +226,11 @@ struct multiboot_mmap_entry {
 	multiboot_uint32_t addr_high;
 	multiboot_uint32_t len_low;
 	multiboot_uint32_t len_high;
-#define MULTIBOOT_MEMORY_AVAILABLE 1
-#define MULTIBOOT_MEMORY_RESERVED 2
+#define MULTIBOOT_MEMORY_AVAILABLE	  1
+#define MULTIBOOT_MEMORY_RESERVED	  2
 #define MULTIBOOT_MEMORY_ACPI_RECLAIMABLE 3
-#define MULTIBOOT_MEMORY_NVS 4
-#define MULTIBOOT_MEMORY_BADRAM 5
+#define MULTIBOOT_MEMORY_NVS		  4
+#define MULTIBOOT_MEMORY_BADRAM		  5
 	multiboot_uint32_t type;
 } __attribute__((packed));
 typedef struct multiboot_mmap_entry multiboot_memory_map_t;

@@ -1,13 +1,10 @@
+#include <kernel/task.h>
+#include <kernel/gdt.h>
+
 .global _switch_to_task
 .type _switch_to_task, @function
 
 .extern tss_entry
-
-.equ PCB_ESP, 0
-.equ PCB_ESP0, 4
-.equ PCB_CR3, 8
-.equ TSS_ESP0, 4
-
 
 _switch_to_task:
         pushl %ebx
@@ -15,25 +12,25 @@ _switch_to_task:
         pushl %edi
         pushl %ebp
 
-        // set edi to current process PCB
-        movl current_process_PCB, %edi
-        // esp = current_process.esp
-        movl %esp, PCB_ESP(%edi)
+        movl current_task_TCB, %edi // set edi to current task TCB
+        movl %esp, TCB_OFFSET_ESP(%edi) // esp = current_task.esp
 
         // load next task's state
         // esi = parameter passed
         movl    20(%esp), %esi
 
-        // current_process_PCB = esi (passes parameter)
-        movl %esi, current_process_PCB
+        movl %esi, current_task_TCB // current_task_TCB = esi (passes parameter)
 
-        // set PCB struct members
-        movl PCB_ESP(%esi), %esp
-        movl PCB_CR3(%esi), %eax
-        movl PCB_ESP0(%esi), %ebx
+
+        // set TCB struct members
+        movl TCB_OFFSET_ESP(%esi), %esp
+        movl TCB_OFFSET_CR3(%esi), %eax
+        movl TCB_OFFSET_ESP0(%esi), %ebx
+
+        movb $TASK_STATE_RUNNING, TCB_OFFSET_STATE(%esi)
 
         // no fucking clue
-        movl %ebx, tss_entry + TSS_ESP0
+        movl %ebx, tss_entry + TSS_OFFSET_ESP0
 
         //eax = previous task VAS
         movl %cr3, %ecx

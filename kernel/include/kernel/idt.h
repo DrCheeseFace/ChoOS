@@ -7,34 +7,34 @@
 #define IDT_MAX_DESCRIPTORS 256
 
 #define IDT_GATE_TYPE_INTERRUPT_32BIT 0x0E
-#define IDT_DPL_KERNEL 0x00
-#define IDT_FLAG_PRESENT 0x80
+#define IDT_DPL_KERNEL		      0x00
+#define IDT_FLAG_PRESENT	      0x80
 
 // 0x8E
 #define IDT_FLAG_KERNEL_INTERRUPT_GATE                                         \
 	(IDT_FLAG_PRESENT | IDT_DPL_KERNEL | IDT_GATE_TYPE_INTERRUPT_32BIT)
 
-#define IDT_DPL_USER 0x60
+#define IDT_DPL_USER	     0x60
 #define IDT_FLAG_USER_ACCESS IDT_DPL_USER
 
-#define PIC1 0x20 /* IO base address for master PIC */
-#define PIC2 0xA0 /* IO base address for slave PIC */
+#define PIC1	     0x20 /* IO base address for master PIC */
+#define PIC2	     0xA0 /* IO base address for slave PIC */
 #define PIC1_COMMAND PIC1
-#define PIC1_DATA (PIC1 + 1)
+#define PIC1_DATA    (PIC1 + 1)
 #define PIC2_COMMAND PIC2
-#define PIC2_DATA (PIC2 + 1)
+#define PIC2_DATA    (PIC2 + 1)
 
 #define PIC_EOI 0x20
 
-#define ICW1_INIT 0x10 // initialization sequence starts
+#define ICW1_INIT	    0x10 // initialization sequence starts
 #define ICW1_EDGE_TRIGGERED 0x01 // edge triggered mode
-#define ICW1_DEFAULT (ICW1_INIT | ICW1_EDGE_TRIGGERED) // 0x11
+#define ICW1_DEFAULT	    (ICW1_INIT | ICW1_EDGE_TRIGGERED) // 0x11
 
 #define PIC1_VECTOR_OFFSET 0x20 // master pic starts at interrupt vector 0x20
 #define PIC2_VECTOR_OFFSET 0x28 // slave pic starts at interrupt vector 0x28
 
 #define ICW3_SLAVE_ON_IRQ2 0x04 // master: slave is connected to irq 2
-#define ICW3_IS_SLAVE 0x02 // slave: i am a slave
+#define ICW3_IS_SLAVE	   0x02 // slave: i am a slave
 
 #define ICW4_8086_MODE 0x01 // set to 8086/8088 mode
 
@@ -43,22 +43,22 @@
 #define PIT_CH0_DATA_PORT 0x40
 #define PIT_CH1_DATA_PORT 0x41
 #define PIT_CH2_DATA_PORT 0x42
-#define PIT_CMD_REG_PORT 0x43
+#define PIT_CMD_REG_PORT  0x43
 
 #define PIT_SC_CHANNEL0 0x00
 #define PIT_SC_CHANNEL1 0x40
 #define PIT_SC_CHANNEL2 0x80
 #define PIT_SC_READBACK 0xC0
 
-#define PIT_RW_LATCH 0x00
+#define PIT_RW_LATCH	   0x00
 #define PIT_RW_LOBYTE_ONLY 0x10
 #define PIT_RW_HIBYTE_ONLY 0x20
-#define PIT_RW_LOHI_BYTE 0x30
+#define PIT_RW_LOHI_BYTE   0x30
 
-#define PIT_MODE_0_INT_TERM 0x00
-#define PIT_MODE_1_ONE_SHOT 0x02
-#define PIT_MODE_2_RATE_GEN 0x04
-#define PIT_MODE_3_SQ_WAVE 0x06
+#define PIT_MODE_0_INT_TERM  0x00
+#define PIT_MODE_1_ONE_SHOT  0x02
+#define PIT_MODE_2_RATE_GEN  0x04
+#define PIT_MODE_3_SQ_WAVE   0x06
 #define PIT_MODE_4_SW_STROBE 0x08
 #define PIT_MODE_5_HW_STROBE 0x0A
 

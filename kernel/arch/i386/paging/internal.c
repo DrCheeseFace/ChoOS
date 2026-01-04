@@ -1,7 +1,7 @@
 #include <kernel/paging_internal.h>
 #include <stdint.h>
 
-#define INDEX_FROM_BIT(a) (a / 32)
+#define INDEX_FROM_BIT(a)  (a / 32)
 #define OFFSET_FROM_BIT(a) (a % 32)
 
 void internal_page_frames_state_bitmap_set(uint32_t bit)
