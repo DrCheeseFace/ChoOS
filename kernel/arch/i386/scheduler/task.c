@@ -3,13 +3,17 @@
 #include <kernel/idt.h>
 #include <kernel/paging.h>
 #include <kernel/task.h>
+#include <kernel/timer.h>
 #include <kernel/utils.h>
+
 #include <stdint.h>
 #include <string.h>
 
+global_variable uint64_t last_tick;
 struct ProcessControlBlock *current_process_PCB;
 
 void task_start_up(void);
+internal void update_time_used(void);
 
 void multitasking_initialize(void)
 {
@@ -18,13 +22,15 @@ void multitasking_initialize(void)
 	__asm__ volatile("cli");
 
 	struct ProcessControlBlock *kernel_process =
-		kmalloc(sizeof(struct ProcessControlBlock));
+		kmalloc(sizeof(*kernel_process));
 	memset(kernel_process, 0, sizeof(*kernel_process));
 
 	uint32_t cr3 = _read_cr3();
 	kernel_process->cr3 = cr3;
 	kernel_process->next = kernel_process;
 	current_process_PCB = kernel_process;
+
+	last_tick = read_ticks_since_boot();
 
 	__asm__ volatile("sti");
 
@@ -53,16 +59,29 @@ void schedule(void)
 	if (!current_process_PCB)
 		return;
 
-	struct ProcessControlBlock *next_task = current_process_PCB->next;
-
-	if (next_task == current_process_PCB) {
+	if (current_process_PCB->next == current_process_PCB) {
 		return;
 	}
 
-	_switch_to_task(next_task);
+	update_time_used();
+	_switch_to_task(current_process_PCB->next);
 }
 
 void task_start_up(void)
 {
 	__asm__ volatile("sti");
+}
+
+uint64_t get_current_process_time_used(void)
+{
+	update_time_used();
+	return current_process_PCB->time_used;
+}
+
+internal void update_time_used(void)
+{
+	uint64_t current_tick = read_ticks_since_boot();
+	uint64_t elapsed = current_tick - last_tick;
+	last_tick = current_tick;
+	current_process_PCB->time_used += elapsed;
 }

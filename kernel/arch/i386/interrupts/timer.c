@@ -5,7 +5,7 @@
 #include <kernel/tty.h>
 #include <kernel/utils.h>
 
-global_variable volatile uint64_t ticks;
+volatile uint64_t ticks_since_boot;
 global_variable const uint32_t freq = 1000;
 
 void irq_0_handler(unused struct Registers *regs);
@@ -13,7 +13,7 @@ void irq_0_handler(unused struct Registers *regs);
 void timer_init(void)
 {
 	KERNEL_DEBUG_LOGGER("initing timer");
-	ticks = 0;
+	ticks_since_boot = 0;
 	irq_install_handler(0, &irq_0_handler);
 	uint32_t divisor = FREQ_HZ / freq;
 
@@ -29,5 +29,10 @@ void timer_init(void)
 
 void irq_0_handler(unused struct Registers *regs)
 {
-	ticks++;
+	ticks_since_boot++;
+}
+
+uint64_t read_ticks_since_boot(void)
+{
+	return ticks_since_boot;
 }

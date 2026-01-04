@@ -13,6 +13,7 @@ struct ProcessControlBlock {
 	uint32_t cr3;
 	struct ProcessControlBlock *next;
 	uint8_t state;
+	uint64_t time_used;
 } __attribute__((packed));
 
 void multitasking_initialize(void);
@@ -25,5 +26,8 @@ extern void _switch_to_task(struct ProcessControlBlock *next);
 
 uint32_t _forge_kernel_stack(uint32_t stack_top, void (*task)(void),
 			     void (*wrapper)(void));
+
+// returns cpu time used in micro second (10^-6s)
+uint64_t get_current_process_time_used(void);
 
 #endif // !_KERNEL_TASK_H

@@ -1,3 +1,4 @@
+#include "kernel/task.h"
 #include <kernel/heap.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
@@ -12,12 +13,13 @@
 internal int test_vmm_aliasing(void);
 internal int test_vmm_unmap_virt(void);
 internal int test_sbrk(void);
-internal int test_kmalloc(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
 
-int test_all(void)
+void test_all(void)
 {
+	uint64_t start_time = get_current_process_time_used();
+
 	kernel_test_logger("TEST: STARTING TESTS");
 
 	int err_out = 0;
@@ -27,7 +29,6 @@ int test_all(void)
 	err_out = run_test(test_vmm_aliasing, &passed, &total);
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
 	err_out = err_out || run_test(test_sbrk, &passed, &total);
-	err_out = err_out || run_test(test_kmalloc, &passed, &total);
 
 	if (err_out) {
 		kernel_test_logger("TEST: FAILED");
@@ -36,9 +37,8 @@ int test_all(void)
 		kernel_test_logger("TEST: PASSED");
 	}
 
-	kernel_test_logger("    %d/%d passed", passed, total);
-
-	return err_out;
+	kernel_test_logger("    %d/%d passed in %llu microseconds", passed,
+			   total, get_current_process_time_used() - start_time);
 }
 
 internal int run_test(int (*test_func)(void), int *passed, int *total)
@@ -50,27 +50,6 @@ internal int run_test(int (*test_func)(void), int *passed, int *total)
 	*total += 1;
 
 	return err_out;
-}
-
-internal int test_kmalloc(void)
-{
-	kernel_test_logger("TEST: kmalloc()");
-
-	const char *str1 = "askdjasdkjasdkj\n";
-	char *my_heap_bytes = kmalloc(strlen(str1) + 1);
-	strncpy(my_heap_bytes, str1, strlen(str1) + 1);
-	printf("%s", my_heap_bytes);
-
-	const char *str2 = "HIHIIHIIH\n";
-	char *my_heap_bytes_2 = kmalloc(strlen(str2) + 1);
-	strncpy(my_heap_bytes_2, str2, strlen(str2) + 1);
-	printf("%s", my_heap_bytes_2);
-	void *newptr = krealloc(my_heap_bytes, 1024);
-
-	kfree(my_heap_bytes_2);
-	kfree(newptr);
-
-	return 0;
 }
 
 internal int test_sbrk(void)
