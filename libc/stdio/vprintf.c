@@ -90,6 +90,110 @@ int vprintf(const char *restrict format, va_list parameters)
 				return -1;
 			written += len;
 		}
+		else if (*format == 'l') {
+			format++;
+			if (*format == 'l') {
+				format++;
+				if (*format == 'u') {
+					format++;
+					unsigned long long u = va_arg(
+						parameters, unsigned long long);
+					char str[32];
+
+					unsigned long long temp = u;
+					int i = 0;
+					if (temp == 0) {
+						str[i++] = '0';
+					}
+					else {
+						do {
+							str[i++] =
+								(char)((temp %
+									10) +
+								       '0');
+							temp /= 10;
+						} while (temp > 0);
+					}
+
+					for (int j = 0; j < i / 2; j++) {
+						char tmp = str[j];
+						str[j] = str[i - 1 - j];
+						str[i - 1 - j] = tmp;
+					}
+
+					size_t len = i;
+					if (maxrem < len) {
+						return EOVERFLOW;
+					}
+					if (!__print(str, len))
+						return -1;
+					written += len;
+				}
+				else if (*format == 'd') {
+					format++;
+					long long d =
+						va_arg(parameters, long long);
+					char str[32];
+					int i = 0;
+
+					unsigned long long temp;
+					if (d < 0) {
+						if (!maxrem)
+							return EOVERFLOW;
+						char sign = '-';
+						if (!__print(&sign, 1))
+							return -1;
+						written++;
+						maxrem--;
+						temp = (unsigned long long)(-(
+							       d + 1)) +
+						       1;
+					}
+					else {
+						temp = (unsigned long long)d;
+					}
+
+					if (temp == 0) {
+						str[i++] = '0';
+					}
+					else {
+						do {
+							str[i++] =
+								(char)((temp %
+									10) +
+								       '0');
+							temp /= 10;
+						} while (temp > 0);
+					}
+
+					for (int j = 0; j < i / 2; j++) {
+						char tmp = str[j];
+						str[j] = str[i - 1 - j];
+						str[i - 1 - j] = tmp;
+					}
+
+					size_t len = i;
+					if (maxrem < len) {
+						return EOVERFLOW;
+					}
+					if (!__print(str, len))
+						return -1;
+					written += len;
+				}
+			}
+			else {
+				// TODO
+				// treat %lu as %u and %ld as %d for now
+				format = format_begun_at;
+				size_t len = strlen(format);
+				if (maxrem < len)
+					return EOVERFLOW;
+				if (!__print(format, len))
+					return -1;
+				written += len;
+				format += len;
+			}
+		}
 		else {
 			format = format_begun_at;
 			size_t len = strlen(format);
