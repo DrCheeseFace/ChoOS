@@ -6,12 +6,12 @@
 #include <kernel/vmm.h>
 #include <stdint.h>
 
-internal void *increment_brk(uintptr_t increment);
-internal void *decrement_brk(uintptr_t decrement);
+internal void *increment_brk(size_t increment);
+internal void *decrement_brk(size_t decrement);
 
-int brk(void *addr)
+int brk(vaddr_t addr)
 {
-	intptr_t diff = (intptr_t)addr - program_break_point;
+	intptr_t diff = addr - program_break_point;
 	void *res = sbrk(diff);
 	if (res != (void *)-1) {
 		return 0;
@@ -30,25 +30,25 @@ void *sbrk(intptr_t increment)
 	return decrement_brk(-increment);
 }
 
-internal void *increment_brk(uintptr_t increment)
+internal void *increment_brk(size_t increment)
 {
-	uintptr_t old_program_break = program_break_point;
-	uintptr_t new_program_break = program_break_point + increment;
+	vaddr_t old_program_break = program_break_point;
+	vaddr_t new_program_break = program_break_point + increment;
 
-	uintptr_t current_mapped_top =
+	vaddr_t current_mapped_top =
 		(program_break_point + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
-	uintptr_t new_mapped_top =
+	vaddr_t new_mapped_top =
 		(new_program_break + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
 
 	if (new_mapped_top > current_mapped_top) {
-		uintptr_t vaddr = current_mapped_top;
+		vaddr_t vaddr = current_mapped_top;
 		while (vaddr < new_mapped_top) {
 			Page *page = pmm_alloc_page();
 			if (page == NULL) {
 				return (void *)-1;
 			}
 
-			int res = vmm_page_map((uintptr_t)page, vaddr, 0x3);
+			int res = vmm_page_map((paddr_t)page, vaddr, 0x3);
 			if (res != 0) {
 				KERNEL_DEBUG_LOGGER("failed to map VIRT 0x%x",
 						    vaddr);
@@ -66,25 +66,24 @@ internal void *increment_brk(uintptr_t increment)
 	return (void *)old_program_break;
 }
 
-internal void *decrement_brk(uintptr_t decrement)
+internal void *decrement_brk(size_t decrement)
 {
-	uintptr_t old_program_break = program_break_point;
-	uintptr_t new_program_break = program_break_point - decrement;
+	vaddr_t old_program_break = program_break_point;
+	vaddr_t new_program_break = program_break_point - decrement;
 
-	if (new_program_break < (uintptr_t)heap_start) {
+	if (new_program_break < (vaddr_t)heap_start) {
 		return (void *)-1;
 	}
 
 	while (program_break_point - PAGE_SIZE >= new_program_break) {
-		void *page_addr = (void *)(program_break_point - PAGE_SIZE);
+		vaddr_t page_addr = (program_break_point - PAGE_SIZE);
 
-		pmm_free_page(V2P(page_addr));
-		int err = vmm_page_unmap((uintptr_t)page_addr);
+		pmm_free_page((void *)V2P(page_addr));
+		int err = vmm_page_unmap(page_addr);
 		if (err != 0) {
 			KERNEL_DEBUG_LOGGER(
 				"failed to unmap PHYS 0x%x from VIRT 0x%x",
-				(uintptr_t)V2P(page_addr),
-				(uintptr_t)page_addr);
+				V2P(page_addr), page_addr);
 		}
 		program_break_point -= PAGE_SIZE;
 	}

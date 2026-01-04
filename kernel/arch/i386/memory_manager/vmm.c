@@ -16,12 +16,12 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags)
 			return ENOMEM;
 		}
 		page_directory_entry->frame =
-			((uintptr_t)new_table_phys) >> PAGE_SHIFT;
+			((paddr_t)new_table_phys) >> PAGE_SHIFT;
 		page_directory_entry->present = 1;
 		page_directory_entry->rw = 1;
 		page_directory_entry->user = 1;
 
-		uintptr_t page_table_virt_start =
+		vaddr_t page_table_virt_start =
 			(uintptr_t)GET_PTE_PTR(virt) & PAGE_MASK;
 		_tlb_flush(page_table_virt_start);
 		memset((void *)page_table_virt_start, 0, PAGE_SIZE);
@@ -56,7 +56,7 @@ int vmm_page_unmap(vaddr_t virt)
 		return 0;
 	}
 
-	uintptr_t phys = page_table_entry->frame << 12;
+	paddr_t phys = page_table_entry->frame << 12;
 	page_table_entry->present = 0;
 	page_table_entry->frame = 0;
 
@@ -64,4 +64,21 @@ int vmm_page_unmap(vaddr_t virt)
 
 	_tlb_flush(virt);
 	return 0;
+}
+
+int vmm_page_map_range(paddr_t phys_start, vaddr_t virt_start, size_t count,
+		       uint32_t flags)
+{
+	for (size_t i = 0; i < count; i++) {
+		if (vmm_page_map(phys_start, virt_start, flags)) {
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+paddr_t vmm_virt_to_phys(vaddr_t virt)
+{
+	return V2P(virt);
 }

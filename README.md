@@ -16,16 +16,13 @@
     - [x] heap implementation
     - [x] all heap blocks be aligned to 8/16bits? am i bothered? google firstfit vs bestfit
     - [ ] add tests for kmalloc kfree
-- [ ] move tests over to using mrt_test framework. (after kmalloc implementation)
+- [ ] move tests over to using mrt_test framework. (after malloc implementation)
 - [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
 - [ ] processes, schedule(), yield() etc
 - [x] figure out why it when DDEBUG flag is off. why is it trying to run the kernellog command when i say NO WHY
 
 # TODO implementations
-paddr_t vmm_virt_to_phys(vaddr_t virt)
-    purpose: debugging and dma. drivers often need the physical address of a buffer to give to hardware.
-    logic: walk the page tables and return the physical address found in the pte + offset.
 
 void* vmm_create_new_context(void)
     purpose: creates a new, blank page map level 4 (pml4) or page directory.
@@ -40,11 +37,6 @@ void vmm_switch_context(void* pml4_phys_addr)
 void vmm_destroy_context(void* pml4_phys_addr)
     purpose: clean up when a process dies.
     logic: frees the page tables associated with this process (but be careful not to free the kernel's pages!).
-
-mapping one page at a time is tedious. you usually want to map a range.
-int vmm_map_range(paddr_t phys_start, vaddr_t virt_start, size_t count, uint32_t flags)
-    purpose: loops vmm_map_page count times.
-    use case: mapping a framebuffer, mmio (memory mapped i/o), or loading a kernel section.
 
 void vmm_page_fault_handler(registers_t* regs)
     purpose: called by the isr (interrupt service routine) when interrupt 14 (on x86) fires.

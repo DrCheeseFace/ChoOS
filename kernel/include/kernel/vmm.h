@@ -2,6 +2,7 @@
 #define _KERNEL_VMM_H
 
 #include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 
 typedef uintptr_t paddr_t;
@@ -33,5 +34,12 @@ int vmm_page_map(paddr_t phys, vaddr_t virt, uint32_t flags);
 // Returns 0 if ok
 // Returns -1 if page directory entry not found
 int vmm_page_unmap(vaddr_t virt);
+
+// Returns 0 if ok
+// Returns ENOMEM if run out of memory
+int vmm_page_map_range(paddr_t phys_start, vaddr_t virt_start, size_t count,
+		       uint32_t flags);
+
+paddr_t vmm_virt_to_phys(vaddr_t virt);
 
 #endif //!_KERNEL_VMM_H

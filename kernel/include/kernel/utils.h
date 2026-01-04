@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define KERNEL_STACK_SIZE 4096
+
 struct Registers {
 	uint32_t cr2;
 	uint32_t ds;

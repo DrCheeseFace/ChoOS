@@ -1,6 +1,6 @@
-.global _enablePaging
+.global _enable_paging
 
-_enablePaging:
+_enable_paging:
         pushl %ebp
         movl %esp, %ebp
 

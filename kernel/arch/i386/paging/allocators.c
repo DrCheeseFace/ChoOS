@@ -9,7 +9,7 @@ global_variable Page *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 
 void pmm_free_page(Page *a)
 {
-	uintptr_t phys_addr = (uintptr_t)a;
+	paddr_t phys_addr = (paddr_t)a;
 	uint32_t index = phys_addr / PAGE_SIZE;
 	internal_pafe_frames_state_bitmap_unset(index);
 }
@@ -52,7 +52,7 @@ Page *pmm_alloc_frame_int(void)
 					internal_page_frames_state_bitmap_set(
 						bit_idx);
 
-					uintptr_t frame_phys_addr =
+					paddr_t frame_phys_addr =
 						bit_idx * PAGE_SIZE;
 					return (void *)frame_phys_addr;
 				}

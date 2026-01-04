@@ -7,21 +7,21 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-uintptr_t program_break_point = 0;
+vaddr_t program_break_point = 0;
 struct HeapBlock *heap_start = NULL;
 
 void heap_init(void)
 {
 	KERNEL_DEBUG_LOGGER("init heap");
 
-	uintptr_t virt_base = (uintptr_t)P2V(0);
-	uintptr_t page_table_size = PAGE_SIZE * 1024; // 4MB
-	uintptr_t hard_limit_addr = virt_base + page_table_size;
+	vaddr_t virt_base = P2V(0);
+	size_t page_table_size = PAGE_SIZE * 1024; // 4MB
+	vaddr_t hard_limit_addr = virt_base + page_table_size;
 
-	uintptr_t heap_start_addr = (uintptr_t)&_kernel_end;
+	vaddr_t heap_start_addr = (vaddr_t)&_kernel_end;
 	if (heap_start_addr % PAGE_SIZE) {
-		heap_start_addr = ((uintptr_t)&_kernel_end + PAGE_SIZE) &
-				  ~(PAGE_SIZE - 1);
+		heap_start_addr =
+			((vaddr_t)&_kernel_end + PAGE_SIZE) & ~(PAGE_SIZE - 1);
 	}
 
 	if (heap_start_addr >= hard_limit_addr) {

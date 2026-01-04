@@ -44,6 +44,7 @@ typedef struct {
 	uintptr_t base;
 } __attribute__((packed)) GdtRegister;
 
+extern volatile struct TssEntry tss_entry;
 struct TssEntry {
 	uint32_t prev_tss;
 	uint32_t esp0;

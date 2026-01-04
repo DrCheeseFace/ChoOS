@@ -2,6 +2,7 @@
 #define _KERNEL_HEAP_H
 
 #include <kernel/misc.h>
+#include <kernel/vmm.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -32,7 +33,7 @@ void heap_init(void);
  *     if err -1
  *
  */
-int brk(void *addr);
+int brk(vaddr_t addr);
 
 /*
  *

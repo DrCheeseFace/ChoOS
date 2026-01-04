@@ -4,14 +4,26 @@
 #include <kernel/utils.h>
 #include <stdint.h>
 
-struct Process {
-	struct Registers regs;
+// current processes, process control block
+extern struct ProcessControlBlock *current_process_PCB;
+
+struct ProcessControlBlock {
+	uint32_t esp;
+	uint32_t esp0;
 	uint32_t cr3;
-	struct Process *next;
+	struct ProcessControlBlock *next;
+	uint8_t state;
 } __attribute__((packed));
 
-void switch_task_irq0_handler(struct Registers *regs);
+void multitasking_initialize(void);
 
-void init_process_queue(int32_t kernel_directory_ptr);
+void schedule(void);
+
+void create_kernel_task(void (*func)(void));
+
+extern void _switch_to_task(struct ProcessControlBlock *next);
+
+uint32_t _forge_kernel_stack(uint32_t stack_top, void (*task)(void),
+			     void (*wrapper)(void));
 
 #endif // !_KERNEL_TASK_H

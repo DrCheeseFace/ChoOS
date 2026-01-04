@@ -9,7 +9,7 @@ extern void _tss_flush(uint32_t);
 
 global_variable volatile GdtEntry gdt_entries[GDT_SEGMENT_COUNT];
 global_variable GdtRegister gdt_ptr;
-global_variable volatile struct TssEntry tss_entry;
+volatile struct TssEntry tss_entry;
 
 void gdt_init(void)
 {

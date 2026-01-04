@@ -2,6 +2,7 @@
 #define _KERNEL_PAGING_H
 
 #include <kernel/multiboot.h>
+#include <kernel/vmm.h>
 #include <stddef.h>
 #include <stdint.h>
 
@@ -17,8 +18,8 @@
 
 #define KERNEL_VIRT_OFFSET 0xC0000000
 
-#define P2V(addr) ((void *)((uintptr_t)(addr) + KERNEL_VIRT_OFFSET))
-#define V2P(addr) ((void *)((uintptr_t)(addr) - KERNEL_VIRT_OFFSET))
+#define P2V(addr) ((vaddr_t)((paddr_t)(addr) + KERNEL_VIRT_OFFSET))
+#define V2P(addr) ((paddr_t)((paddr_t)(addr) - KERNEL_VIRT_OFFSET))
 
 typedef struct {
 	uint32_t present : 1;
@@ -49,8 +50,10 @@ Page *pmm_alloc_page(void);
 
 uint64_t __get_total_free_memory(void);
 
-extern void _loadPageDirectory(uint32_t addr);
+extern void _load_page_directory(uint32_t addr);
 
-extern void _enablePaging(void);
+extern void _enable_paging(void);
+
+extern uint32_t _read_cr3(void);
 
 #endif

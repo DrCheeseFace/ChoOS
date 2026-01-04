@@ -1,6 +1,6 @@
-.global _loadPageDirectory
+.global _load_page_directory
 
-_loadPageDirectory:
+_load_page_directory:
 	pushl	%ebp
 	movl	%esp, %ebp
 

@@ -135,8 +135,8 @@ internal void heap_block_split(struct HeapBlock *block, size_t size)
 		return;
 	}
 
-	uintptr_t new_block_addr =
-		((uintptr_t)block + sizeof(struct HeapBlock) + size);
+	vaddr_t new_block_addr =
+		((vaddr_t)block + sizeof(struct HeapBlock) + size);
 
 	struct HeapBlock *new_block =
 		internal_heap_block_set_metadata((void *)new_block_addr,
@@ -151,6 +151,5 @@ internal size_t heap_block_get_available_space(struct HeapBlock *block)
 		return 0;
 	}
 
-	return (uintptr_t)block->next - (uintptr_t)block -
-	       sizeof(struct HeapBlock);
+	return (vaddr_t)block->next - (vaddr_t)block - sizeof(struct HeapBlock);
 }

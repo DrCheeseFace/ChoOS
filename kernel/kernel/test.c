@@ -169,14 +169,14 @@ internal int test_vmm_aliasing(void)
 	Page *phys_frame = pmm_alloc_page();
 	ASSERT_MSG(phys_frame != NULL, "failed to allocate page");
 
-	uintptr_t virt_a = 0xD0000000;
-	uintptr_t virt_b = 0xE0000000;
+	vaddr_t virt_a = 0xD0000000;
+	vaddr_t virt_b = 0xE0000000;
 
 	vmm_page_map((paddr_t)phys_frame, virt_a, 3);
 	vmm_page_map((paddr_t)phys_frame, virt_b, 3);
 
-	uintptr_t *ptr_a = (uintptr_t *)virt_a;
-	uintptr_t *ptr_b = (uintptr_t *)virt_b;
+	vaddr_t *ptr_a = (vaddr_t *)virt_a;
+	vaddr_t *ptr_b = (vaddr_t *)virt_b;
 
 	*ptr_a = 0xDEADBEEF;
 
@@ -197,8 +197,8 @@ internal int test_vmm_unmap_virt(void)
 
 	paddr_t phys_addr = (paddr_t)phys_frame_ptr;
 
-	uintptr_t virt_a = 0xD0000000;
-	uintptr_t virt_b = 0xE0000000;
+	vaddr_t virt_a = 0xD0000000;
+	vaddr_t virt_b = 0xE0000000;
 
 	vmm_page_map(phys_addr, virt_a, 3);
 	vmm_page_map(phys_addr, virt_b, 3);

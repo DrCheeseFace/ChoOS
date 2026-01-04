@@ -12,7 +12,6 @@
 #include <string.h>
 
 global_variable volatile Page *page_directory;
-global_variable uintptr_t page_frames_start_addr;
 global_variable size_t page_frames_len = 0;
 global_variable uint64_t total_free_memory = 0;
 uint32_t page_frames_state_bitmap[BITMAP_SIZE];
@@ -36,7 +35,7 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 	if (page_directory_phys == NULL) {
 		abort("KMALLOC_FAILED_TO_ALLOCATE_ERR: failed to allocate frame for page directory");
 	}
-	page_directory = P2V(page_directory_phys);
+	page_directory = (void *)P2V(page_directory_phys);
 	memset(page_directory_phys, 0, PAGE_SIZE);
 
 	Page *first_page_table = pmm_alloc_frame_int();
@@ -53,24 +52,24 @@ void pmm_directory_init(uint32_t magic, multiboot_info_t *mbd)
 	}
 
 	page_directory_phys[0].frame =
-		((uintptr_t)first_page_table) >> PAGE_SHIFT;
+		((paddr_t)first_page_table) >> PAGE_SHIFT;
 	page_directory_phys[0].present = 1;
 	page_directory_phys[0].rw = 1;
 	page_directory_phys[0].user = 0;
 
 	page_directory_phys[768].frame =
-		((uintptr_t)first_page_table) >> PAGE_SHIFT;
+		((paddr_t)first_page_table) >> PAGE_SHIFT;
 	page_directory_phys[768].present = 1;
 	page_directory_phys[768].rw = 1;
 	page_directory_phys[768].user = 0;
 
 	page_directory_phys[1023].frame =
-		((uintptr_t)page_directory_phys >> PAGE_SHIFT);
+		((paddr_t)page_directory_phys >> PAGE_SHIFT);
 	page_directory_phys[1023].present = 1;
 	page_directory_phys[1023].rw = 1;
 	page_directory_phys[1023].user = 0;
 
-	_loadPageDirectory((uintptr_t)page_directory_phys);
+	_load_page_directory((paddr_t)page_directory_phys);
 
 	KERNEL_DEBUG_LOGGER("init paging OK");
 }
@@ -80,7 +79,6 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	memset(page_frames_state_bitmap, 0xFF,
 	       sizeof(page_frames_state_bitmap));
 
-	page_frames_start_addr = 0x0;
 	page_frames_len = MAX_PAGE_FRAME_COUNT;
 
 	KERNEL_DEBUG_LOGGER("Initialized %d frames as USED",
@@ -90,9 +88,9 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 	while ((uint32_t)entry < mbd->mmap_addr + mbd->mmap_length) {
 		if (entry->type == MULTIBOOT_MEMORY_AVAILABLE &&
 		    entry->addr_high == 0) {
-			uintptr_t start = (uintptr_t)entry->addr_low;
-			uintptr_t length = (uintptr_t)entry->len_low;
-			uintptr_t end = start + length;
+			paddr_t start = entry->addr_low;
+			size_t length = entry->len_low;
+			paddr_t end = start + length;
 
 			// align to page boundaries
 			start = (start + PAGE_SIZE - 1) & ~(PAGE_SIZE - 1);
@@ -101,7 +99,7 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 				"Found AVAILABLE RAM: 0x%x - 0x%x: %u bytes",
 				start, end, length);
 
-			for (uintptr_t addr = start; addr < end;
+			for (paddr_t addr = start; addr < end;
 			     addr += PAGE_SIZE) {
 				uint32_t page_idx = addr / PAGE_SIZE;
 				if (page_idx < MAX_PAGE_FRAME_COUNT) {
@@ -121,8 +119,8 @@ internal void pmm_frames_init(multiboot_info_t *mbd)
 					 sizeof(entry->size));
 	}
 
-	uintptr_t k_start = (uintptr_t)&_kernel_start;
-	uintptr_t k_end = (uintptr_t)&_kernel_end - KERNEL_VIRT_OFFSET;
+	paddr_t k_start = (paddr_t)&_kernel_start;
+	paddr_t k_end = (paddr_t)&_kernel_end - KERNEL_VIRT_OFFSET;
 
 	uint32_t start_idx = k_start / PAGE_SIZE;
 	uint32_t end_idx = (k_end / PAGE_SIZE) + 1;
