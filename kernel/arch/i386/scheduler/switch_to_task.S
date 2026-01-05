@@ -7,13 +7,14 @@
 .extern tss_entry
 
 _switch_to_task:
+        // save old task registers
         pushl %ebx
         pushl %esi
         pushl %edi
         pushl %ebp
 
-        movl current_task_TCB, %edi // set edi to current task TCB
-        movl %esp, TCB_OFFSET_ESP(%edi) // esp = current_task.esp
+        movl current_task_TCB, %edi // set edi = current_task_TCB
+        movl %esp, TCB_OFFSET_ESP(%edi) // current_task_TCB = esp
 
         // load next task's state
         // esi = parameter passed
@@ -27,21 +28,23 @@ _switch_to_task:
         movl TCB_OFFSET_CR3(%esi), %eax
         movl TCB_OFFSET_ESP0(%esi), %ebx
 
+        // set current_task_TCB->state = RUNNING
         movb $TASK_STATE_RUNNING, TCB_OFFSET_STATE(%esi)
 
-        // no fucking clue
+        // set task segment selector esp0
         movl %ebx, tss_entry + TSS_OFFSET_ESP0
 
-        //eax = previous task VAS
+        // eax = previous task VAS
         movl %cr3, %ecx
         cmpl %ecx, %eax
         je .doneVAS
         movl %eax, %cr3
 
 .doneVAS:
+        // remove junk added at the top
         pop %ebp
         pop %edi
         pop %esi
         pop %ebx
 
-        ret
+        ret // return to new task

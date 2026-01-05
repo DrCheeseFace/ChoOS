@@ -55,6 +55,11 @@ void create_kernel_task(void (*func)(void))
 	memset(new_task, 0, sizeof(*new_task));
 
 	void *stack_base = kmalloc(KERNEL_STACK_SIZE);
+	if (!stack_base) {
+		kfree(new_task);
+		KERNEL_DEBUG_LOGGER("failed to allocate task stack");
+		abort("failed to allocate task stack");
+	}
 
 	uint32_t stack_top = (uint32_t)stack_base + KERNEL_STACK_SIZE;
 
