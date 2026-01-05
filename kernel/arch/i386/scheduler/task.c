@@ -12,8 +12,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-global_variable volatile uint64_t last_tick;
-global_variable volatile uint64_t current_pid = 0;
+global_variable uint64_t last_tick;
+global_variable uint64_t current_pid = 0;
 
 volatile struct TaskControlBlock *current_task_TCB = NULL;
 volatile struct TaskControlBlock *first_ready_to_run_task = NULL;
