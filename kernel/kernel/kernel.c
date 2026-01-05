@@ -1,5 +1,6 @@
 #include <kernel/gdt.h>
 #include <kernel/heap.h>
+#include <kernel/heap_internal.h>
 #include <kernel/idt.h>
 #include <kernel/keyboard.h>
 #include <kernel/multiboot.h>
@@ -55,6 +56,8 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	create_kernel_task(test_1);
 	create_kernel_task(test_2);
 	test_3();
+
+	internal_heap_log_info();
 
 	for (;;)
 		;

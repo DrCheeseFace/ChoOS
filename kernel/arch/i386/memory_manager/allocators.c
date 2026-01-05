@@ -10,7 +10,6 @@
 
 internal void heap_block_split(struct HeapBlock *block, size_t size);
 internal void heap_block_merge_down(struct HeapBlock *block);
-internal size_t heap_block_get_available_space(struct HeapBlock *block);
 
 void *kmalloc(size_t size)
 {
@@ -18,7 +17,8 @@ void *kmalloc(size_t size)
 
 	struct HeapBlock *node = heap_start;
 	while (!node->EOM) {
-		size_t available_space = heap_block_get_available_space(node);
+		size_t available_space =
+			internal_heap_block_get_available_space(node);
 
 		if (node->free && available_space >= aligned_size) {
 			heap_block_split(node, aligned_size);
@@ -77,7 +77,8 @@ void *krealloc(void *ptr, size_t size)
 
 	struct HeapBlock *original_block = (struct HeapBlock *)ptr - 1;
 
-	size_t available_space = heap_block_get_available_space(original_block);
+	size_t available_space =
+		internal_heap_block_get_available_space(original_block);
 	if (available_space >= size) {
 		heap_block_split(original_block, size);
 		return ptr;
@@ -127,7 +128,7 @@ internal void heap_block_merge_down(struct HeapBlock *block)
 internal void heap_block_split(struct HeapBlock *block, size_t size)
 {
 	size_t aligned_size = ALIGN(size);
-	size_t available_space = heap_block_get_available_space(block);
+	size_t available_space = internal_heap_block_get_available_space(block);
 
 	// no need to split
 	if (available_space < aligned_size + sizeof(struct HeapBlock) +
@@ -143,13 +144,4 @@ internal void heap_block_split(struct HeapBlock *block, size_t size)
 						 EOM_FALSE, HEAP_BLOCK_FREE,
 						 block->next);
 	block->next = new_block;
-}
-
-internal size_t heap_block_get_available_space(struct HeapBlock *block)
-{
-	if (block->EOM) {
-		return 0;
-	}
-
-	return (vaddr_t)block->next - (vaddr_t)block - sizeof(struct HeapBlock);
 }

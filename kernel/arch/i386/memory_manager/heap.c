@@ -5,6 +5,7 @@
 #include <kernel/utils.h>
 #include <kernel/vmm.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 vaddr_t program_break_point = 0;
@@ -40,4 +41,18 @@ void heap_init(void)
 
 	KERNEL_DEBUG_LOGGER("heap start: 0x%x", heap_start_addr);
 	KERNEL_DEBUG_LOGGER("init heap OK");
+}
+
+void heap_log_info(void)
+{
+	struct HeapBlock *node = heap_start;
+	size_t i = 0;
+	while (!node->EOM) {
+		printf("idx: %llu; free: %s;avai space: %llu", i,
+		       node->free ? "FREE" : "USED",
+		       internal_heap_block_get_available_space(node));
+
+		i++;
+		node = node->next;
+	}
 }
