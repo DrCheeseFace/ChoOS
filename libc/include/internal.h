@@ -1,6 +1,5 @@
-
-#ifndef _STD_INTERNEL_H
-#define _STD_INTERNEL_H
+#ifndef _STD_INTERNAL_H
+#define _STD_INTERNAL_H
 
 #include <stdarg.h>
 #include <stdbool.h>

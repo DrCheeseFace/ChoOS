@@ -1,4 +1,4 @@
-#include <internel.h>
+#include <internal.h>
 #include <limits.h>
 #include <stdarg.h>
 #include <stdbool.h>
