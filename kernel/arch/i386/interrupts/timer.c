@@ -1,6 +1,6 @@
 #include <kernel/idt.h>
 #include <kernel/misc.h>
-#include <kernel/task.h>
+#include <kernel/process.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
 #include <kernel/utils.h>
@@ -31,7 +31,7 @@ void irq_0_handler(unused struct Registers *regs)
 {
 	ticks_since_boot++;
 	if (ticks_since_boot % 1000 == 0) {
-		dead_tasks_cleanup();
+		dead_processs_cleanup();
 	}
 }
 

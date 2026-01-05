@@ -5,8 +5,8 @@
 #include <kernel/keyboard.h>
 #include <kernel/multiboot.h>
 #include <kernel/paging.h>
+#include <kernel/process.h>
 #include <kernel/ssp.h>
-#include <kernel/task.h>
 #include <kernel/test.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
@@ -48,13 +48,13 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	pmm_directory_init(magic, mbd);
 	heap_init();
 	timer_init();
-	multitasking_initialize();
+	multiprocessing_initialize();
 	keyboard_init();
 
 	test_all();
 
-	unused uint32_t test_1_pid = create_kernel_task(test_1);
-	unused uint32_t test_2_pid = create_kernel_task(test_2);
+	unused uint32_t test_1_pid = create_kernel_process(test_1);
+	unused uint32_t test_2_pid = create_kernel_process(test_2);
 	test_3();
 
 	for (;;)
