@@ -53,12 +53,10 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 
 	test_all();
 
-	create_kernel_task(test_1);
-	create_kernel_task(test_2);
+	unused uint32_t test_1_pid = create_kernel_task(test_1);
+	unused uint32_t test_2_pid = create_kernel_task(test_2);
 	test_3();
 
-	internal_heap_log_info();
-
 	for (;;)
-		;
+		schedule();
 }

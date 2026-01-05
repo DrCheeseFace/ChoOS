@@ -30,6 +30,9 @@ void timer_init(void)
 void irq_0_handler(unused struct Registers *regs)
 {
 	ticks_since_boot++;
+	if (ticks_since_boot % 1000 == 0) {
+		dead_tasks_cleanup();
+	}
 }
 
 uint64_t read_ticks_since_boot(void)
