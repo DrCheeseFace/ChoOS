@@ -1,10 +1,10 @@
 #ifndef _KERNEL_PROCESS_H
 #define _KERNEL_PROCESS_H
 
-#define PROCESS_STATE_WAITING	   0
+#define PROCESS_STATE_DEAD	   0
 #define PROCESS_STATE_READY_TO_RUN 1
 #define PROCESS_STATE_RUNNING	   2
-#define PROCESS_STATE_DEAD	   3
+#define PROCESS_STATE_WAITING	   3
 
 #define PCB_OFFSET_ID	 0
 #define PCB_OFFSET_ESP	 4
@@ -18,9 +18,12 @@
 #include <stdint.h>
 // current process, process control block
 extern volatile struct ProcessControlBlock *current_process_PCB;
+extern volatile int IRQ_disable_counter;
+
+typedef uint32_t PID;
 
 struct ProcessControlBlock {
-	uint32_t id;
+	PID id;
 	uint32_t esp;
 	uint32_t esp0;
 	uint32_t cr3;
@@ -33,9 +36,19 @@ struct ProcessControlBlock {
 void multiprocessing_initialize(void);
 
 void schedule(void);
+void lock_scheduler(void);
+void unlock_scheduler(void);
 
 // returns pid
 uint32_t create_kernel_process(void (*func)(void));
+
+// Returns
+//     PROCESS_STATE_DEAD	   0
+//     PROCESS_STATE_READY_TO_RUN  1
+//     PROCESS_STATE_RUNNING	   2
+//     PROCESS_STATE_WAITING	   3
+// Returns -1 if not found
+int get_process_state(PID pid);
 
 extern void _switch_to_process(volatile struct ProcessControlBlock *next);
 

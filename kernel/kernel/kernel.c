@@ -50,13 +50,19 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	timer_init();
 	multiprocessing_initialize();
 	keyboard_init();
-
 	test_all();
 
-	unused uint32_t test_1_pid = create_kernel_process(test_1);
-	unused uint32_t test_2_pid = create_kernel_process(test_2);
-	test_3();
+	// unused uint32_t test_1_pid = create_kernel_process(test_1);
+	// unused uint32_t test_2_pid = create_kernel_process(test_2);
+	// test_3();
+	//
+	// KERNEL_DEBUG_LOG_HEAP_INFO();
+	//
+	// schedule();
+	// dead_processs_cleanup();
+	//
+	// KERNEL_DEBUG_LOG_HEAP_INFO();
 
 	for (;;)
-		schedule();
+		;
 }

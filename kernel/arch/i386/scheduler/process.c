@@ -14,6 +14,7 @@
 
 global_variable uint64_t last_tick;
 global_variable uint64_t current_pid = 0;
+volatile int IRQ_disable_counter = 0;
 
 volatile struct ProcessControlBlock *current_process_PCB = NULL;
 volatile struct ProcessControlBlock *first_ready_to_run_process = NULL;
@@ -59,11 +60,14 @@ internal void free_process(volatile struct ProcessControlBlock *node)
 	kfree((void *)node);
 }
 
+void process_start_up(void)
+{
+	__asm__ volatile("sti");
+}
+
 void dead_processs_cleanup(void)
 {
-	__asm__ volatile("cli");
-	KERNEL_DEBUG_LOGGER("dead_processs_cleanup entry");
-	internal_heap_log_info();
+	lock_scheduler();
 
 	volatile struct ProcessControlBlock *node = dead_processs;
 	while (node) {
@@ -73,31 +77,31 @@ void dead_processs_cleanup(void)
 	}
 	dead_processs = NULL;
 
-	internal_heap_log_info();
-
-	KERNEL_DEBUG_LOGGER("dead_processs_cleanup exit");
-	__asm__ volatile("sti");
+	unlock_scheduler();
 }
 
-void mark_process_dead(void)
+internal void mark_process_for_death(void)
 {
-	printf("currentid %d\n", current_process_PCB->id);
-	current_process_PCB->state = PROCESS_STATE_DEAD;
-	current_process_PCB->next = NULL;
-	if (dead_processs) {
-		dead_processs->next = current_process_PCB;
-	}
-	else {
-		dead_processs = current_process_PCB;
-	}
+	lock_scheduler();
 
+	KERNEL_DEBUG_LOGGER("marked pid: %d for death",
+			    current_process_PCB->id);
+
+	current_process_PCB->state = PROCESS_STATE_DEAD;
+
+	// push to front of dead queue
+	current_process_PCB->next = dead_processs;
+	dead_processs = current_process_PCB;
+
+	unlock_scheduler();
 	schedule();
 
-	abort("process cleanup process returned");
+	abort("process cleanup process returned: no other processes ready to run. ie: you fucked up");
 }
 
-uint32_t create_kernel_process(void (*func)(void))
+PID create_kernel_process(void (*func)(void))
 {
+	lock_scheduler();
 	current_pid++;
 
 	struct ProcessControlBlock *new_process = kmalloc(sizeof(*new_process));
@@ -117,7 +121,7 @@ uint32_t create_kernel_process(void (*func)(void))
 	uint32_t stack_top = (uint32_t)stack_base + KERNEL_STACK_SIZE;
 
 	new_process->esp = _forge_kernel_stack(
-		stack_top, func, process_start_up, mark_process_dead);
+		stack_top, func, process_start_up, mark_process_for_death);
 	new_process->esp0 = stack_top;
 	new_process->cr3 = _read_cr3();
 	new_process->state = PROCESS_STATE_READY_TO_RUN;
@@ -133,6 +137,7 @@ uint32_t create_kernel_process(void (*func)(void))
 		last_ready_to_run_process = new_process;
 	}
 
+	unlock_scheduler();
 	return new_process->id;
 }
 
@@ -141,32 +146,81 @@ void schedule(void)
 	if (!first_ready_to_run_process)
 		return;
 
-	volatile struct ProcessControlBlock *process_to_run =
+	volatile struct ProcessControlBlock *next_process =
 		first_ready_to_run_process;
-	first_ready_to_run_process = process_to_run->next;
+
+	first_ready_to_run_process = next_process->next;
+
+	if (!first_ready_to_run_process) {
+		last_ready_to_run_process = NULL;
+	}
 
 	update_time_used();
 
-	if (current_process_PCB->state == PROCESS_STATE_RUNNING) {
+	if (current_process_PCB->state == PROCESS_STATE_RUNNING ||
+	    current_process_PCB->state == PROCESS_STATE_READY_TO_RUN) {
 		current_process_PCB->state = PROCESS_STATE_READY_TO_RUN;
+		current_process_PCB->next = NULL;
 
 		if (last_ready_to_run_process) {
 			last_ready_to_run_process->next = current_process_PCB;
+			last_ready_to_run_process = current_process_PCB;
 		}
 		else {
 			first_ready_to_run_process = current_process_PCB;
+			last_ready_to_run_process = current_process_PCB;
 		}
-
-		last_ready_to_run_process = current_process_PCB;
-		last_ready_to_run_process->next = NULL;
 	}
 
-	_switch_to_process(process_to_run);
+	next_process->state = PROCESS_STATE_RUNNING;
+
+	_switch_to_process(next_process);
 }
 
-void process_start_up(void)
+void lock_scheduler(void)
 {
-	__asm__ volatile("sti");
+#ifndef SMP
+	__asm__ volatile("cli");
+	IRQ_disable_counter++;
+#endif
+}
+
+void unlock_scheduler(void)
+{
+#ifndef SMP
+	IRQ_disable_counter--;
+	if (IRQ_disable_counter == 0) {
+		__asm__ volatile("sti");
+	}
+#endif
+}
+
+int get_process_state(PID pid)
+{
+	if (current_process_PCB && current_process_PCB->id == pid) {
+		return current_process_PCB->state;
+	}
+
+	// check ready to run processes
+	struct ProcessControlBlock *node = (void *)first_ready_to_run_process;
+	while (node) {
+		if (node->id == pid) {
+			return node->state;
+		}
+		node = (void *)node->next;
+	}
+
+	// check dead processes
+	node = (void *)dead_processs;
+	while (node) {
+		if (node->id == pid) {
+			return node->state;
+		}
+		node = (void *)node->next;
+	}
+
+	// process doesnt exist or already cleanedup
+	return -1;
 }
 
 uint64_t get_current_process_time_used(void)

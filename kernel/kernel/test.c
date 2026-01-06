@@ -1,7 +1,7 @@
-#include "kernel/process.h"
 #include <kernel/heap.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
+#include <kernel/process.h>
 #include <kernel/test.h>
 #include <kernel/utils.h>
 #include <kernel/vmm.h>
@@ -15,6 +15,8 @@ internal int test_vmm_unmap_virt(void);
 internal int test_sbrk(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
+internal int test_multiprocessing_scheduler(void);
+internal void long_process(void);
 
 void test_all(void)
 {
@@ -29,12 +31,14 @@ void test_all(void)
 	err_out = run_test(test_vmm_aliasing, &passed, &total);
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
 	err_out = err_out || run_test(test_sbrk, &passed, &total);
+	err_out = err_out ||
+		  run_test(test_multiprocessing_scheduler, &passed, &total);
 
 	if (err_out) {
-		kernel_test_logger("TEST: FAILED");
+		kernel_test_logger("TESTS: FAILED");
 	}
 	else {
-		kernel_test_logger("TEST: PASSED");
+		kernel_test_logger("TESTS: PASSED");
 	}
 
 	kernel_test_logger("    %d/%d passed in %llu microseconds", passed,
@@ -143,7 +147,7 @@ internal int test_sbrk(void)
 
 internal int test_vmm_aliasing(void)
 {
-	kernel_test_logger("TEST: VMM Aliasing... ");
+	kernel_test_logger("TEST: vmm aliasing... ");
 
 	Page *phys_frame = pmm_alloc_page();
 	ASSERT_MSG(phys_frame != NULL, "failed to allocate page");
@@ -169,7 +173,7 @@ internal int test_vmm_aliasing(void)
 
 internal int test_vmm_unmap_virt(void)
 {
-	kernel_test_logger("TEST: VMM Unmapping... ");
+	kernel_test_logger("TEST: vmm unmapping... ");
 
 	void *phys_frame_ptr = pmm_alloc_page();
 	ASSERT_MSG(phys_frame_ptr != NULL, "failed to allocate new page");
@@ -188,19 +192,51 @@ internal int test_vmm_unmap_virt(void)
 	*ptr_a = 0xDEADBEEF;
 
 	ASSERT_MSG(*ptr_b == 0xDEADBEEF,
-		   "Aliasing setup failed. B does not equal A.");
+		   "aliasing setup failed. b does not equal a.");
 
 	int err = vmm_page_unmap(virt_b);
 	ASSERT_MSG(!err, "vmm_unmap_page returned error");
-	ASSERT_MSG(*ptr_a == 0xDEADBEEF, "Unmapping B corrupted A");
+	ASSERT_MSG(*ptr_a == 0xDEADBEEF, "unmapping b corrupted a");
 
 	volatile Page *page_table_entry_b =
 		(volatile Page *)GET_PTE_PTR(virt_b);
 	ASSERT_MSG(page_table_entry_b->present != 1,
-		   "virt_b PTE is still marked PRESENT");
+		   "virt_b pte is still marked present");
 
 	kernel_test_logger("[PASSED]");
 	return 0;
+}
+
+internal int test_multiprocessing_scheduler(void)
+{
+	kernel_test_logger("TEST: multiprocessing schedule & locks");
+
+	uint32_t pid1 = create_kernel_process(long_process);
+	uint32_t pid2 = create_kernel_process(long_process);
+
+	kernel_test_logger("created test process %d and %d", pid1, pid2);
+
+	while (get_process_state(pid1) || get_process_state(pid2)) {
+		lock_scheduler();
+		schedule();
+		unlock_scheduler();
+	}
+
+	ASSERT_MSG(IRQ_disable_counter == 0, "Interrupts stayed disabled!");
+	kernel_test_logger("[PASSED]");
+	return 0;
+}
+
+internal void long_process(void)
+{
+	volatile uint32_t j = 0;
+	for (uint32_t i = 0; i < 10; i++) {
+		j++;
+
+		lock_scheduler();
+		schedule();
+		unlock_scheduler();
+	}
 }
 
 internal void kernel_test_logger(const char *format, ...)
