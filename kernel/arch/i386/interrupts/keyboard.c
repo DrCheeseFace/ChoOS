@@ -327,7 +327,16 @@ internal void log_key_press(enum PS2ScancodeSet1 scancode)
 		printf("%c", uppercase[scancode]);
 	}
 	else {
-		printf("%c", lowercase[scancode]);
+#ifdef DEBUG
+		if (scancode == SC_RBRACKET) {
+			KERNEL_DEBUG_LOG_HEAP_INFO();
+		}
+		else {
+#endif
+			printf("%c", lowercase[scancode]);
+#ifdef DEBUG
+		}
+#endif
 	}
 	return;
 }

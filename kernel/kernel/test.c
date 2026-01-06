@@ -216,13 +216,26 @@ internal int test_multiprocessing_scheduler(void)
 
 	kernel_test_logger("created test process %d and %d", pid1, pid2);
 
+	ASSERT_MSG(IRQ_disable_counter == 0,
+		   "interrupts should be enabled here");
+
+	lock_scheduler();
+	ASSERT_MSG(IRQ_disable_counter == 1,
+		   "IRQ_disable_counter should be 1 after locking scheduler");
+	schedule();
+	unlock_scheduler();
+
 	while (get_process_state(pid1) || get_process_state(pid2)) {
 		lock_scheduler();
+
+		ASSERT_MSG(IRQ_disable_counter != 0,
+			   "interrupts should be disabled here");
+
 		schedule();
 		unlock_scheduler();
 	}
 
-	ASSERT_MSG(IRQ_disable_counter == 0, "Interrupts stayed disabled!");
+	ASSERT_MSG(IRQ_disable_counter == 0, "interrupts stayed disabled");
 	kernel_test_logger("[PASSED]");
 	return 0;
 }
@@ -232,7 +245,6 @@ internal void long_process(void)
 	volatile uint32_t j = 0;
 	for (uint32_t i = 0; i < 10; i++) {
 		j++;
-
 		lock_scheduler();
 		schedule();
 		unlock_scheduler();

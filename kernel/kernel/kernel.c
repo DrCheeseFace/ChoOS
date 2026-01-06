@@ -55,14 +55,11 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	// unused uint32_t test_1_pid = create_kernel_process(test_1);
 	// unused uint32_t test_2_pid = create_kernel_process(test_2);
 	// test_3();
-	//
-	// KERNEL_DEBUG_LOG_HEAP_INFO();
-	//
-	// schedule();
-	// dead_processs_cleanup();
-	//
 	// KERNEL_DEBUG_LOG_HEAP_INFO();
 
-	for (;;)
-		;
+	while (get_process_state(0)) {
+		lock_scheduler();
+		schedule();
+		unlock_scheduler();
+	}
 }
