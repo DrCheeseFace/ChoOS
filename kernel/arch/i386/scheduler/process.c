@@ -4,11 +4,11 @@
 #include <kernel/idt.h>
 #include <kernel/paging.h>
 #include <kernel/process.h>
+#include <kernel/process_internal.h>
 #include <kernel/timer.h>
 #include <kernel/utils.h>
 
 #include <stdint.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,7 +19,7 @@ volatile int IRQ_disable_counter = 0;
 volatile struct ProcessControlBlock *current_process_PCB = NULL;
 volatile struct ProcessControlBlock *first_ready_to_run_process = NULL;
 volatile struct ProcessControlBlock *last_ready_to_run_process = NULL;
-
+volatile struct ProcessControlBlock *sleeping_processes = NULL;
 volatile struct ProcessControlBlock *dead_processs = NULL;
 
 void process_start_up(void);
@@ -48,6 +48,8 @@ void multiprocessing_initialize(void)
 	kernel_process->stack_base = NULL;
 
 	last_tick = read_ticks_since_boot();
+
+	install_timer_event(&internal_update_awoken_processes);
 
 	__asm__ volatile("sti");
 
@@ -83,9 +85,6 @@ void dead_processs_cleanup(void)
 internal void mark_process_for_death(void)
 {
 	lock_scheduler();
-
-	KERNEL_DEBUG_LOGGER("marked pid: %d for death",
-			    current_process_PCB->id);
 
 	current_process_PCB->state = PROCESS_STATE_DEAD;
 
@@ -148,7 +147,6 @@ void schedule(void)
 
 	volatile struct ProcessControlBlock *next_process =
 		first_ready_to_run_process;
-
 	first_ready_to_run_process = next_process->next;
 
 	if (!first_ready_to_run_process) {
@@ -210,6 +208,15 @@ int get_process_state(PID pid)
 		node = (void *)node->next;
 	}
 
+	// check sleeping processes
+	node = (void *)sleeping_processes;
+	while (node) {
+		if (node->id == pid) {
+			return node->state;
+		}
+		node = (void *)node->next;
+	}
+
 	// check dead processes
 	node = (void *)dead_processs;
 	while (node) {
@@ -221,6 +228,52 @@ int get_process_state(PID pid)
 
 	// process doesnt exist or already cleanedup
 	return -1;
+}
+
+void block_process(int reason)
+{
+	lock_scheduler();
+
+	current_process_PCB->state = reason;
+	current_process_PCB->next =
+		(struct ProcessControlBlock *)sleeping_processes;
+	sleeping_processes = current_process_PCB;
+
+	unlock_scheduler();
+
+	schedule();
+}
+
+void unblock_process(volatile struct ProcessControlBlock *process)
+{
+	lock_scheduler();
+
+	if (sleeping_processes == process) {
+		sleeping_processes = process->next;
+	}
+	else {
+		volatile struct ProcessControlBlock *prev = sleeping_processes;
+		while (prev && prev->next != process) {
+			prev = prev->next;
+		}
+		if (prev) {
+			prev->next = process->next;
+		}
+	}
+
+	process->state = PROCESS_STATE_READY_TO_RUN;
+	process->next = NULL;
+
+	if (first_ready_to_run_process == NULL) {
+		first_ready_to_run_process = process;
+		last_ready_to_run_process = process;
+	}
+	else {
+		last_ready_to_run_process->next = process;
+		last_ready_to_run_process = process;
+	}
+
+	unlock_scheduler();
 }
 
 uint64_t get_current_process_time_used(void)

@@ -4,7 +4,7 @@
 #define PROCESS_STATE_DEAD	   0
 #define PROCESS_STATE_READY_TO_RUN 1
 #define PROCESS_STATE_RUNNING	   2
-#define PROCESS_STATE_WAITING	   3
+#define PROCESS_STATE_SLEEPING	   3
 
 #define PCB_OFFSET_ID	 0
 #define PCB_OFFSET_ESP	 4
@@ -46,9 +46,17 @@ uint32_t create_kernel_process(void (*func)(void));
 //     PROCESS_STATE_DEAD	   0
 //     PROCESS_STATE_READY_TO_RUN  1
 //     PROCESS_STATE_RUNNING	   2
-//     PROCESS_STATE_WAITING	   3
+//     PROCESS_STATE_SLEEPING	   3
 // Returns -1 if not found
 int get_process_state(PID pid);
+
+// Args: reason
+//     PROCESS_STATE_DEAD	   0
+//     PROCESS_STATE_READY_TO_RUN  1
+//     PROCESS_STATE_RUNNING	   2
+//     PROCESS_STATE_SLEEPING	   3
+void block_process(int reason);
+void unblock_process(volatile struct ProcessControlBlock *process);
 
 extern void _switch_to_process(volatile struct ProcessControlBlock *next);
 

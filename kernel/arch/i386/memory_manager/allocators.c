@@ -1,3 +1,4 @@
+#include "kernel/process.h"
 #include <kernel/heap.h>
 #include <kernel/heap_internal.h>
 #include <kernel/misc.h>
@@ -13,6 +14,8 @@ internal void heap_block_merge_down(struct HeapBlock *block);
 
 void *kmalloc(size_t size)
 {
+	lock_scheduler();
+
 	size_t aligned_size = ALIGN(size);
 
 	struct HeapBlock *node = heap_start;
@@ -23,6 +26,7 @@ void *kmalloc(size_t size)
 		if (node->free && available_space >= aligned_size) {
 			heap_block_split(node, aligned_size);
 			node->free = HEAP_BLOCK_USED;
+			unlock_scheduler();
 			return node + 1; // return memory within heap block
 		}
 
@@ -33,6 +37,7 @@ void *kmalloc(size_t size)
 	if (new_block == (void *)-1) {
 		KERNEL_DEBUG_LOGGER("sbrk() failed for size %d",
 				    (int32_t)aligned_size);
+		unlock_scheduler();
 		return NULL;
 	}
 
@@ -48,30 +53,39 @@ void *kmalloc(size_t size)
 
 	node->next = new_heap_end;
 
+	unlock_scheduler();
 	return node + 1;
 }
 
 void *kcalloc(size_t nmemb, size_t size)
 {
+	lock_scheduler();
+
 	size_t bytes = nmemb * size;
 
 	void *new_block = kmalloc(bytes);
 	if (!new_block) {
+		unlock_scheduler();
 		return NULL;
 	}
 
 	memset(new_block, 0, bytes);
+
+	unlock_scheduler();
 	return new_block;
 }
 
 void *krealloc(void *ptr, size_t size)
 {
+	lock_scheduler();
 	if (!ptr) {
+		unlock_scheduler();
 		return kmalloc(size);
 	}
 
 	if (size == 0) {
 		kfree(ptr);
+		unlock_scheduler();
 		return NULL;
 	}
 
@@ -81,21 +95,27 @@ void *krealloc(void *ptr, size_t size)
 		internal_heap_block_get_available_space(original_block);
 	if (available_space >= size) {
 		heap_block_split(original_block, size);
+		unlock_scheduler();
 		return ptr;
 	}
 
 	void *new_block = kmalloc(size);
 	if (!new_block) {
+		unlock_scheduler();
 		return NULL;
 	}
 
 	memmove(new_block, ptr, available_space);
 	kfree(ptr);
+
+	unlock_scheduler();
 	return new_block;
 }
 
 void kfree(void *ptr)
 {
+	lock_scheduler();
+
 	struct HeapBlock *heap_block = (struct HeapBlock *)ptr - 1;
 	if (heap_block->free) {
 		KERNEL_DEBUG_LOGGER("DOUBLE FREE attempted at 0x%x", ptr);
@@ -108,6 +128,7 @@ void kfree(void *ptr)
 	}
 
 	if (heap_block == heap_start) {
+		unlock_scheduler();
 		return;
 	}
 
@@ -118,6 +139,8 @@ void kfree(void *ptr)
 	if (parent_block->free) {
 		heap_block_merge_down(parent_block);
 	}
+
+	unlock_scheduler();
 }
 
 internal void heap_block_merge_down(struct HeapBlock *block)

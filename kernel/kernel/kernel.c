@@ -6,6 +6,7 @@
 #include <kernel/multiboot.h>
 #include <kernel/paging.h>
 #include <kernel/process.h>
+#include <kernel/sleep.h>
 #include <kernel/ssp.h>
 #include <kernel/test.h>
 #include <kernel/timer.h>
@@ -14,26 +15,20 @@
 #include <kernel/vmm.h>
 #include <stdio.h>
 
-void test_1(void)
+void test_sleep(void)
 {
-	for (int i = 0; i < 3; i++) {
-		printf("TEST1 %d\n", i);
+	for (int i = 0; i < 10; i++) {
+		nano_sleep(100);
+		printf("hi\n");
 		schedule();
 	}
 }
 
-void test_2(void)
+void test_sleep1(void)
 {
-	for (int i = 10; i < 13; i++) {
-		printf("TEST2 %d\n", i);
-		schedule();
-	}
-}
-
-void test_3(void)
-{
-	for (int i = 100; i < 103; i++) {
-		printf("TEST3 %d\n", i);
+	for (int i = 0; i < 10; i++) {
+		nano_sleep(200);
+		printf("hello\n");
 		schedule();
 	}
 }
@@ -52,10 +47,15 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	keyboard_init();
 	test_all();
 
-	// unused uint32_t test_1_pid = create_kernel_process(test_1);
-	// unused uint32_t test_2_pid = create_kernel_process(test_2);
-	// test_3();
-	// KERNEL_DEBUG_LOG_HEAP_INFO();
+	unused uint32_t proc = create_kernel_process(test_sleep);
+	unused uint32_t proc_1 = create_kernel_process(test_sleep1);
+	while (get_process_state(proc) || get_process_state(proc_1)) {
+		lock_scheduler();
+		schedule();
+		unlock_scheduler();
+	}
+
+	dead_processs_cleanup();
 
 	while (get_process_state(0)) {
 		lock_scheduler();

@@ -1,9 +1,11 @@
 #ifndef _KERNEL_UTILS_H
 #define _KERNEL_UTILS_H
 
+#include <kernel/paging.h>
 #include <stdint.h>
 
-#define KERNEL_STACK_SIZE 4096
+// why so high?
+#define KERNEL_STACK_SIZE PAGE_SIZE * 4
 
 struct Registers {
 	uint32_t cr2;
