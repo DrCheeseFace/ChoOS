@@ -18,6 +18,8 @@
 #include <stdint.h>
 // current process, process control block
 extern volatile struct ProcessControlBlock *current_process_PCB;
+// sleeping processes
+extern volatile struct ProcessControlBlock *sleeping_processes;
 extern volatile int IRQ_disable_counter;
 
 typedef uint32_t PID;
@@ -31,6 +33,7 @@ struct ProcessControlBlock {
 	uint8_t state;
 	uint64_t time_used;
 	void *stack_base;
+	uint64_t target_wakeup_time;
 } __attribute__((packed));
 
 void multiprocessing_initialize(void);

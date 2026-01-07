@@ -170,8 +170,6 @@ void schedule(void)
 		}
 	}
 
-	next_process->state = PROCESS_STATE_RUNNING;
-
 	_switch_to_process(next_process);
 }
 

@@ -6,22 +6,9 @@
 
 #include <stdint.h>
 
-struct SleepNode {
-	volatile struct ProcessControlBlock *proc;
-	uint64_t target_wakeup_time;
-	struct SleepNode *next;
-};
-
-global_variable struct SleepNode *sleeping_processes = NULL;
-
 void nano_sleep_until(uint32_t nano_seconds)
 {
-	struct SleepNode *new_node = kmalloc(sizeof(*new_node));
-	new_node->target_wakeup_time = nano_seconds;
-	new_node->next = sleeping_processes;
-	new_node->proc = current_process_PCB;
-	sleeping_processes = new_node;
-
+	current_process_PCB->target_wakeup_time = nano_seconds;
 	block_process(PROCESS_STATE_SLEEPING);
 }
 
@@ -40,19 +27,16 @@ void internal_update_awoken_processes(unused struct Registers *regs,
 {
 	lock_scheduler();
 
-	struct SleepNode **curr = &sleeping_processes;
+	volatile struct ProcessControlBlock *curr = sleeping_processes;
 
-	while (*curr) {
-		struct SleepNode *entry = *curr;
+	while (curr) {
+		volatile struct ProcessControlBlock *next = curr->next;
 
-		if (entry->target_wakeup_time <= ticks_since_boot) {
-			unblock_process(entry->proc);
-			*curr = entry->next;
-			kfree(entry);
+		if (curr->target_wakeup_time <= ticks_since_boot) {
+			unblock_process(curr);
 		}
-		else {
-			curr = &entry->next;
-		}
+
+		curr = next;
 	}
 
 	unlock_scheduler();
