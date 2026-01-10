@@ -18,8 +18,8 @@
 void test_sleep(void)
 {
 	for (int i = 0; i < 10; i++) {
-		nano_sleep(100);
-		printf("hi\n");
+		micro_sleep(100);
+		printf("thread 1;");
 		schedule();
 	}
 }
@@ -27,11 +27,13 @@ void test_sleep(void)
 void test_sleep1(void)
 {
 	for (int i = 0; i < 10; i++) {
-		nano_sleep(200);
-		printf("hello\n");
+		micro_sleep(200);
+		printf("thread 2;");
 		schedule();
 	}
 }
+
+void kernel_idle_task(void);
 
 void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 {
@@ -45,7 +47,10 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	timer_init();
 	multiprocessing_initialize();
 	keyboard_init();
-	test_all();
+
+	if (test_all()) {
+		abort("tests failed");
+	}
 
 	unused uint32_t proc = create_kernel_process(test_sleep);
 	unused uint32_t proc_1 = create_kernel_process(test_sleep1);
@@ -55,11 +60,16 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 		unlock_scheduler();
 	}
 
+	KERNEL_DEBUG_LOG_HEAP_INFO();
 	dead_processs_cleanup();
+	KERNEL_DEBUG_LOG_HEAP_INFO();
 
-	while (get_process_state(0)) {
-		lock_scheduler();
-		schedule();
-		unlock_scheduler();
+	kernel_idle_task();
+}
+
+void kernel_idle_task(void)
+{
+	for (;;) {
+		__asm__ volatile("hlt");
 	}
 }

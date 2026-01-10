@@ -14,7 +14,9 @@
 
 global_variable uint64_t last_tick;
 global_variable uint64_t current_pid = 0;
-volatile int IRQ_disable_counter = 0;
+volatile uint32_t IRQ_disable_counter = 0;
+volatile uint32_t postpone_task_switches_counter = 0;
+volatile uint8_t task_switches_postponed_flag = 0;
 
 volatile struct ProcessControlBlock *current_process_PCB = NULL;
 volatile struct ProcessControlBlock *first_ready_to_run_process = NULL;
@@ -22,8 +24,10 @@ volatile struct ProcessControlBlock *last_ready_to_run_process = NULL;
 volatile struct ProcessControlBlock *sleeping_processes = NULL;
 volatile struct ProcessControlBlock *dead_processs = NULL;
 
-void process_start_up(void);
 internal void update_time_used(void);
+internal void free_process(volatile struct ProcessControlBlock *node);
+internal void mark_process_for_death(void);
+internal void process_start_up(void);
 
 void multiprocessing_initialize(void)
 {
@@ -51,20 +55,13 @@ void multiprocessing_initialize(void)
 
 	install_timer_event(&internal_update_awoken_processes);
 
+	postpone_task_switches_counter = 0;
+	task_switches_postponed_flag = 0;
+	IRQ_disable_counter = 0;
+
 	__asm__ volatile("sti");
 
 	KERNEL_DEBUG_LOGGER("init multiprocessing OK");
-}
-
-internal void free_process(volatile struct ProcessControlBlock *node)
-{
-	kfree((void *)(node->stack_base));
-	kfree((void *)node);
-}
-
-void process_start_up(void)
-{
-	__asm__ volatile("sti");
 }
 
 void dead_processs_cleanup(void)
@@ -80,22 +77,6 @@ void dead_processs_cleanup(void)
 	dead_processs = NULL;
 
 	unlock_scheduler();
-}
-
-internal void mark_process_for_death(void)
-{
-	lock_scheduler();
-
-	current_process_PCB->state = PROCESS_STATE_DEAD;
-
-	// push to front of dead queue
-	current_process_PCB->next = dead_processs;
-	dead_processs = current_process_PCB;
-
-	unlock_scheduler();
-	schedule();
-
-	abort("process cleanup process returned: no other processes ready to run. ie: you fucked up");
 }
 
 PID create_kernel_process(void (*func)(void))
@@ -142,6 +123,11 @@ PID create_kernel_process(void (*func)(void))
 
 void schedule(void)
 {
+	if (postpone_task_switches_counter != 0) {
+		task_switches_postponed_flag = 1;
+		return;
+	}
+
 	if (!first_ready_to_run_process)
 		return;
 
@@ -175,20 +161,24 @@ void schedule(void)
 
 void lock_scheduler(void)
 {
-#ifndef SMP
 	__asm__ volatile("cli");
 	IRQ_disable_counter++;
-#endif
+	postpone_task_switches_counter++;
 }
 
 void unlock_scheduler(void)
 {
-#ifndef SMP
+	postpone_task_switches_counter--;
+	if (postpone_task_switches_counter == 0) {
+		if (task_switches_postponed_flag != 0) {
+			task_switches_postponed_flag = 0;
+			schedule();
+		}
+	}
 	IRQ_disable_counter--;
 	if (IRQ_disable_counter == 0) {
 		__asm__ volatile("sti");
 	}
-#endif
 }
 
 int get_process_state(PID pid)
@@ -286,4 +276,31 @@ internal void update_time_used(void)
 	uint64_t elapsed = current_tick - last_tick;
 	last_tick = current_tick;
 	current_process_PCB->time_used += elapsed;
+}
+
+internal void free_process(volatile struct ProcessControlBlock *node)
+{
+	kfree((void *)(node->stack_base));
+	kfree((void *)node);
+}
+
+internal void mark_process_for_death(void)
+{
+	lock_scheduler();
+
+	current_process_PCB->state = PROCESS_STATE_DEAD;
+
+	// push to front of dead queue
+	current_process_PCB->next = dead_processs;
+	dead_processs = current_process_PCB;
+
+	unlock_scheduler();
+	schedule();
+
+	abort("process cleanup process returned: no other processes ready to run. ie: you fucked up");
+}
+
+internal void process_start_up(void)
+{
+	__asm__ volatile("sti");
 }

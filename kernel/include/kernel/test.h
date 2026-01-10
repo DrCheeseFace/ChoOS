@@ -1,7 +1,7 @@
 #ifndef _KERNEL_TEST_H
 #define _KERNEL_TEST_H
 
-void test_all(void);
+int test_all(void);
 
 #define ASSERT_MSG(cond, msg)                                                  \
 	do {                                                                   \

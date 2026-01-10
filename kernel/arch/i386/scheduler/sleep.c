@@ -6,20 +6,24 @@
 
 #include <stdint.h>
 
-void nano_sleep_until(uint32_t nano_seconds)
+void micro_sleep_until(uint32_t micro_seconds)
 {
-	current_process_PCB->target_wakeup_time = nano_seconds;
+	lock_scheduler();
+
+	current_process_PCB->target_wakeup_time = micro_seconds;
+
+	unlock_scheduler();
 	block_process(PROCESS_STATE_SLEEPING);
 }
 
-void nano_sleep(uint32_t nano_seconds)
+void micro_sleep(uint32_t micro_seconds)
 {
-	nano_sleep_until(read_ticks_since_boot() + nano_seconds);
+	micro_sleep_until(read_ticks_since_boot() + micro_seconds);
 }
 
 void sleep(uint32_t seconds)
 {
-	nano_sleep(seconds * 1000);
+	micro_sleep(seconds * 1000);
 }
 
 void internal_update_awoken_processes(unused struct Registers *regs,

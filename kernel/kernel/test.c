@@ -18,7 +18,7 @@ internal int run_test(int (*test_func)(void), int *passed, int *total);
 internal int test_multiprocessing_scheduler(void);
 internal void long_process(void);
 
-void test_all(void)
+int test_all(void)
 {
 	uint64_t start_time = get_current_process_time_used();
 
@@ -43,6 +43,8 @@ void test_all(void)
 
 	kernel_test_logger("    %d/%d passed in %llu microseconds", passed,
 			   total, get_current_process_time_used() - start_time);
+
+	return err_out;
 }
 
 internal int run_test(int (*test_func)(void), int *passed, int *total)

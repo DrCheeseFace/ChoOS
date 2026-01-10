@@ -20,7 +20,9 @@
 extern volatile struct ProcessControlBlock *current_process_PCB;
 // sleeping processes
 extern volatile struct ProcessControlBlock *sleeping_processes;
-extern volatile int IRQ_disable_counter;
+extern volatile uint32_t IRQ_disable_counter;
+extern volatile uint32_t postpone_task_switches_counter;
+extern volatile uint8_t task_switches_postponed_flag;
 
 typedef uint32_t PID;
 

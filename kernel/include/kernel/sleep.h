@@ -4,9 +4,9 @@
 #include <stdint.h>
 
 // sleep until read_ticks_since_boot();
-void nano_sleep_until(uint32_t nano_seconds);
+void micro_sleep_until(uint32_t micro_seconds);
 
-void nano_sleep(uint32_t nano_seconds);
+void micro_sleep(uint32_t micro_seconds);
 
 void sleep(uint32_t seconds);
 

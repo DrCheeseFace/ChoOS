@@ -20,6 +20,7 @@
 - [ ] bitmap to some other physical memory allocators
 - [ ] can there be multile regions of free memory to allocate page frames for?
 - [x] processes, schedule(), yield() etc
+- [ ] time slices for scheduler
 - [x] figure out why it when DDEBUG flag is off. why is it trying to run the kernellog command when i say NO WHY
 - [x] figure out how to kfree the kmallocs in process.c
 

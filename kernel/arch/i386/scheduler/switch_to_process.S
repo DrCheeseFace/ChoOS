@@ -7,6 +7,11 @@
 .extern tss_entry
 
 _switch_to_process:
+        cmpl $0, postpone_task_switches_counter
+        je .continue
+        movl $1, task_switches_postponed_flag
+        ret
+.continue:
         // save old process registers
         pushl %ebx
         pushl %esi

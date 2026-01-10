@@ -1,7 +1,7 @@
-#include "kernel/process.h"
 #include <kernel/heap.h>
 #include <kernel/heap_internal.h>
 #include <kernel/misc.h>
+#include <kernel/process.h>
 #include <kernel/utils.h>
 #include <stddef.h>
 #include <string.h>
