@@ -1,31 +1,31 @@
-#include <kernel/process.h>
+#include <kernel/task.h>
 #include <kernel/gdt.h>
 
-.global _switch_to_process
-.type _switch_to_process, @function
+.global _switch_to_task
+.type _switch_to_task, @function
 
 .extern tss_entry
 
-_switch_to_process:
+_switch_to_task:
         cmpl $0, postpone_task_switches_counter
         je .continue
         movl $1, task_switches_postponed_flag
         ret
 .continue:
-        // save old process registers
+        // save old task registers
         pushl %ebx
         pushl %esi
         pushl %edi
         pushl %ebp
 
-        movl current_process_PCB, %edi // set edi = current_process_PCB
-        movl %esp, PCB_OFFSET_ESP(%edi) // current_process_PCB = esp
+        movl current_task_PCB, %edi // set edi = current_task_PCB
+        movl %esp, PCB_OFFSET_ESP(%edi) // current_task_PCB = esp
 
-        // load next process's state
+        // load next task's state
         // esi = parameter passed
         movl    20(%esp), %esi
 
-        movl %esi, current_process_PCB // current_process_PCB = esi (passes parameter)
+        movl %esi, current_task_PCB // current_task_PCB = esi (passes parameter)
 
 
         // set PCB struct members
@@ -33,13 +33,13 @@ _switch_to_process:
         movl PCB_OFFSET_CR3(%esi), %eax
         movl PCB_OFFSET_ESP0(%esi), %ebx
 
-        // set current_process_PCB->state = RUNNING
-        movb $PROCESS_STATE_RUNNING, PCB_OFFSET_STATE(%esi)
+        // set current_task_PCB->state = RUNNING
+        movb $TASK_STATE_RUNNING, PCB_OFFSET_STATE(%esi)
 
-        // set process segment selector esp0
+        // set task segment selector esp0
         movl %ebx, tss_entry + TSS_OFFSET_ESP0
 
-        // eax = previous process VAS
+        // eax = previous task VAS
         movl %cr3, %ecx
         cmpl %ecx, %eax
         je .doneVAS
@@ -52,4 +52,4 @@ _switch_to_process:
         pop %esi
         pop %ebx
 
-        ret // return to new process
+        ret // return to new task

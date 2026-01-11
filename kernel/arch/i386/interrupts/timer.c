@@ -1,7 +1,7 @@
 #include <kernel/heap.h>
 #include <kernel/idt.h>
 #include <kernel/misc.h>
-#include <kernel/process.h>
+#include <kernel/task.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
 #include <kernel/utils.h>

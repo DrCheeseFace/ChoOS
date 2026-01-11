@@ -5,9 +5,9 @@
 #include <kernel/keyboard.h>
 #include <kernel/multiboot.h>
 #include <kernel/paging.h>
-#include <kernel/process.h>
 #include <kernel/sleep.h>
 #include <kernel/ssp.h>
+#include <kernel/task.h>
 #include <kernel/test.h>
 #include <kernel/timer.h>
 #include <kernel/tty.h>
@@ -45,23 +45,23 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 	pmm_directory_init(magic, mbd);
 	heap_init();
 	timer_init();
-	multiprocessing_initialize();
+	multitasking_initialize();
 	keyboard_init();
 
 	if (test_all()) {
 		abort("tests failed");
 	}
 
-	unused uint32_t proc = create_kernel_process(test_sleep);
-	unused uint32_t proc_1 = create_kernel_process(test_sleep1);
-	while (get_process_state(proc) || get_process_state(proc_1)) {
+	unused uint32_t proc = create_kernel_task(test_sleep);
+	unused uint32_t proc_1 = create_kernel_task(test_sleep1);
+	while (get_task_state(proc) || get_task_state(proc_1)) {
 		lock_scheduler();
 		schedule();
 		unlock_scheduler();
 	}
 
 	KERNEL_DEBUG_LOG_HEAP_INFO();
-	dead_processs_cleanup();
+	dead_tasks_cleanup();
 	KERNEL_DEBUG_LOG_HEAP_INFO();
 
 	kernel_idle_task();

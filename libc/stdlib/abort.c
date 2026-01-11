@@ -19,7 +19,7 @@ __attribute__((__noreturn__)) void abort(const char *err)
 	}
 
 #else
-	// TODO: Abnormally terminate the process as if by SIGABRT.
+	// TODO: Abnormally terminate the task as if by SIGABRT.
 	printf("abort()\n");
 	while (1) {
 	}

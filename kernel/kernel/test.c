@@ -1,7 +1,7 @@
 #include <kernel/heap.h>
 #include <kernel/misc.h>
 #include <kernel/paging.h>
-#include <kernel/process.h>
+#include <kernel/task.h>
 #include <kernel/test.h>
 #include <kernel/utils.h>
 #include <kernel/vmm.h>
@@ -15,12 +15,12 @@ internal int test_vmm_unmap_virt(void);
 internal int test_sbrk(void);
 internal void kernel_test_logger(const char *format, ...);
 internal int run_test(int (*test_func)(void), int *passed, int *total);
-internal int test_multiprocessing_scheduler(void);
-internal void long_process(void);
+internal int test_multitasking_scheduler(void);
+internal void long_task(void);
 
 int test_all(void)
 {
-	uint64_t start_time = get_current_process_time_used();
+	uint64_t start_time = get_current_task_time_used();
 
 	kernel_test_logger("TEST: STARTING TESTS");
 
@@ -32,7 +32,7 @@ int test_all(void)
 	err_out = err_out || run_test(test_vmm_unmap_virt, &passed, &total);
 	err_out = err_out || run_test(test_sbrk, &passed, &total);
 	err_out = err_out ||
-		  run_test(test_multiprocessing_scheduler, &passed, &total);
+		  run_test(test_multitasking_scheduler, &passed, &total);
 
 	if (err_out) {
 		kernel_test_logger("TESTS: FAILED");
@@ -42,7 +42,7 @@ int test_all(void)
 	}
 
 	kernel_test_logger("    %d/%d passed in %llu microseconds", passed,
-			   total, get_current_process_time_used() - start_time);
+			   total, get_current_task_time_used() - start_time);
 
 	return err_out;
 }
@@ -209,14 +209,14 @@ internal int test_vmm_unmap_virt(void)
 	return 0;
 }
 
-internal int test_multiprocessing_scheduler(void)
+internal int test_multitasking_scheduler(void)
 {
-	kernel_test_logger("TEST: multiprocessing schedule & locks");
+	kernel_test_logger("TEST: multitasking schedule & locks");
 
-	uint32_t pid1 = create_kernel_process(long_process);
-	uint32_t pid2 = create_kernel_process(long_process);
+	uint32_t pid1 = create_kernel_task(long_task);
+	uint32_t pid2 = create_kernel_task(long_task);
 
-	kernel_test_logger("created test process %d and %d", pid1, pid2);
+	kernel_test_logger("created test task %d and %d", pid1, pid2);
 
 	ASSERT_MSG(IRQ_disable_counter == 0,
 		   "interrupts should be enabled here");
@@ -227,7 +227,7 @@ internal int test_multiprocessing_scheduler(void)
 	schedule();
 	unlock_scheduler();
 
-	while (get_process_state(pid1) || get_process_state(pid2)) {
+	while (get_task_state(pid1) || get_task_state(pid2)) {
 		lock_scheduler();
 
 		ASSERT_MSG(IRQ_disable_counter != 0,
@@ -242,7 +242,7 @@ internal int test_multiprocessing_scheduler(void)
 	return 0;
 }
 
-internal void long_process(void)
+internal void long_task(void)
 {
 	volatile uint32_t j = 0;
 	for (uint32_t i = 0; i < 10; i++) {
