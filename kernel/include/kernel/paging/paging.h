@@ -1,8 +1,8 @@
 #ifndef _KERNEL_PAGING_H
 #define _KERNEL_PAGING_H
 
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/multiboot.h>
-#include <kernel/vmm.h>
 #include <stddef.h>
 #include <stdint.h>
 

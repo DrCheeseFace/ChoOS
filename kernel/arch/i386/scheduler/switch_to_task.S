@@ -1,4 +1,5 @@
-#include <kernel/task.h>
+#include <kernel/scheduler/task.h>
+#include <kernel/scheduler/scheduler.h>
 #include <kernel/gdt.h>
 
 .global _switch_to_task

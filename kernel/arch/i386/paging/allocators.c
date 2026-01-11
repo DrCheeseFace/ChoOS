@@ -2,8 +2,8 @@
 #include <stdint.h>
 
 #include <kernel/misc.h>
-#include <kernel/paging.h>
-#include <kernel/paging_internal.h>
+#include <kernel/paging/paging.h>
+#include <kernel/paging/paging_internal.h>
 
 global_variable Page *pre_frames[BATCH_PAGES_ALLOCED_MAX];
 

@@ -1,5 +1,5 @@
-#include <kernel/heap.h>
-#include <kernel/heap_internal.h>
+#include <kernel/memory_manager/heap.h>
+#include <kernel/memory_manager/heap_internal.h>
 #include <kernel/misc.h>
 
 #include <stdbool.h>

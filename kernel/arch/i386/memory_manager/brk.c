@@ -1,9 +1,9 @@
-#include <kernel/heap.h>
-#include <kernel/heap_internal.h>
+#include <kernel/memory_manager/heap.h>
+#include <kernel/memory_manager/heap_internal.h>
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/misc.h>
-#include <kernel/paging.h>
+#include <kernel/paging/paging.h>
 #include <kernel/utils.h>
-#include <kernel/vmm.h>
 #include <stdint.h>
 
 internal void *increment_brk(size_t increment);

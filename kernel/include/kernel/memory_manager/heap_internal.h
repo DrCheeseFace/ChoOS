@@ -1,7 +1,7 @@
 #ifndef _KERNEL_HEAP_INTERNAL_H
 #define _KERNEL_HEAP_INTERNAL_H
 
-#include <kernel/vmm.h>
+#include <kernel/memory_manager/vmm.h>
 #include <stdbool.h>
 #include <stdint.h>
 

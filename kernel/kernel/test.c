@@ -1,10 +1,11 @@
-#include <kernel/heap.h>
+#include <kernel/memory_manager/heap.h>
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/misc.h>
-#include <kernel/paging.h>
-#include <kernel/task.h>
+#include <kernel/paging/paging.h>
+#include <kernel/scheduler/scheduler.h>
+#include <kernel/scheduler/task.h>
 #include <kernel/test.h>
 #include <kernel/utils.h>
-#include <kernel/vmm.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>

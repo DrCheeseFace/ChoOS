@@ -1,7 +1,7 @@
 #ifndef _KERNEL_PAGING_INTERNAL_H
 #define _KERNEL_PAGING_INTERNAL_H
 
-#include <kernel/paging.h>
+#include <kernel/paging/paging.h>
 #include <stdbool.h>
 #include <stdint.h>
 

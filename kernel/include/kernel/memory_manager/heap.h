@@ -1,8 +1,8 @@
 #ifndef _KERNEL_HEAP_H
 #define _KERNEL_HEAP_H
 
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/misc.h>
-#include <kernel/vmm.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>

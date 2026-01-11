@@ -1,7 +1,8 @@
 #include <kernel/gdt.h>
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/misc.h>
-#include <kernel/paging.h>
-#include <kernel/paging_internal.h>
+#include <kernel/paging/paging.h>
+#include <kernel/paging/paging_internal.h>
 #include <kernel/utils.h>
 
 #include <stdbool.h>

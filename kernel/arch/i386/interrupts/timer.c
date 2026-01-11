@@ -1,8 +1,9 @@
-#include <kernel/heap.h>
-#include <kernel/idt.h>
+#include <kernel/interrupts/idt.h>
+#include <kernel/interrupts/timer.h>
+#include <kernel/memory_manager/heap.h>
 #include <kernel/misc.h>
-#include <kernel/task.h>
-#include <kernel/timer.h>
+#include <kernel/scheduler/scheduler.h>
+#include <kernel/scheduler/task.h>
 #include <kernel/tty.h>
 #include <kernel/utils.h>
 

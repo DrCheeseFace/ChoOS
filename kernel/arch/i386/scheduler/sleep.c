@@ -1,10 +1,14 @@
-#include <kernel/heap.h>
+#include <kernel/interrupts/timer.h>
+#include <kernel/memory_manager/heap.h>
+#include <kernel/memory_manager/vmm.h>
 #include <kernel/misc.h>
-#include <kernel/sleep.h>
-#include <kernel/task.h>
-#include <kernel/timer.h>
+#include <kernel/scheduler/scheduler.h>
+#include <kernel/scheduler/sleep.h>
+#include <kernel/scheduler/task.h>
 
 #include <stdint.h>
+
+volatile struct ProcessControlBlock *sleeping_taskes = NULL;
 
 void micro_sleep_until(uint32_t micro_seconds)
 {

@@ -1,7 +1,7 @@
 #include <kernel/gdt.h>
-#include <kernel/idt.h>
+#include <kernel/interrupts/idt.h>
+#include <kernel/interrupts/timer.h>
 #include <kernel/misc.h>
-#include <kernel/timer.h>
 #include <kernel/utils.h>
 
 #include <stdint.h>

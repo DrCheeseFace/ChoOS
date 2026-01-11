@@ -1,5 +1,5 @@
-#include <kernel/idt.h>
-#include <kernel/keyboard.h>
+#include <kernel/interrupts/idt.h>
+#include <kernel/interrupts/keyboard.h>
 #include <kernel/misc.h>
 #include <kernel/tty.h>
 #include <kernel/utils.h>

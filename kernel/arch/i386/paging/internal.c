@@ -1,4 +1,4 @@
-#include <kernel/paging_internal.h>
+#include <kernel/paging/paging_internal.h>
 #include <stdint.h>
 
 #define INDEX_FROM_BIT(a)  (a / 32)
