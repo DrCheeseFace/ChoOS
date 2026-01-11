@@ -19,7 +19,7 @@ void test_sleep(void)
 {
 	for (int i = 0; i < 10; i++) {
 		micro_sleep(100);
-		printf("thread 1;");
+		printf("thread 1;\n");
 		schedule();
 	}
 }
@@ -28,7 +28,10 @@ void test_sleep1(void)
 {
 	for (int i = 0; i < 10; i++) {
 		micro_sleep(200);
-		printf("thread 2;");
+		printf("thread 2;\n");
+		if (i == 5) {
+			terminate_task();
+		}
 		schedule();
 	}
 }
@@ -54,10 +57,10 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 
 	unused uint32_t proc = create_kernel_task(test_sleep);
 	unused uint32_t proc_1 = create_kernel_task(test_sleep1);
+
 	while (get_task_state(proc) || get_task_state(proc_1)) {
-		lock_scheduler();
 		schedule();
-		unlock_scheduler();
+		__asm__ volatile("hlt");
 	}
 
 	KERNEL_DEBUG_LOG_HEAP_INFO();

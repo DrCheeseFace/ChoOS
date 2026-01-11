@@ -12,6 +12,9 @@ void micro_sleep_until(uint32_t micro_seconds)
 
 	current_task_PCB->target_wakeup_time = micro_seconds;
 
+	current_task_PCB->next = sleeping_taskes;
+	sleeping_taskes = current_task_PCB;
+
 	unlock_scheduler();
 	block_task(TASK_STATE_SLEEPING);
 }
@@ -32,15 +35,27 @@ void internal_update_awoken_taskes(unused struct Registers *regs,
 	lock_scheduler();
 
 	volatile struct ProcessControlBlock *curr = sleeping_taskes;
+	volatile struct ProcessControlBlock *prev = NULL;
 
 	while (curr) {
 		volatile struct ProcessControlBlock *next = curr->next;
 
 		if (curr->target_wakeup_time <= ticks_since_boot) {
-			unblock_task(curr);
-		}
+			if (prev == NULL) {
+				sleeping_taskes = next;
+			}
+			else {
+				prev->next = next;
+			}
 
-		curr = next;
+			unblock_task(curr);
+
+			curr = next;
+		}
+		else {
+			prev = curr;
+			curr = next;
+		}
 	}
 
 	unlock_scheduler();
