@@ -18,7 +18,7 @@ int get_task_state(PID pid)
 	}
 
 	// check ready to run tasks
-	struct ProcessControlBlock *node = (void *)first_ready_to_run_task;
+	struct TaskControlBlock *node = (void *)first_ready_to_run_task;
 	while (node) {
 		if (node->id == pid) {
 			return node->state;
@@ -59,7 +59,7 @@ void block_task(int reason)
 	schedule();
 }
 
-void unblock_task(volatile struct ProcessControlBlock *task)
+void unblock_task(volatile struct TaskControlBlock *task)
 {
 	lock_scheduler();
 

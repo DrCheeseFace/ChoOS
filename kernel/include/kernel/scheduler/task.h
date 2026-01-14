@@ -14,7 +14,7 @@
 #include <stdint.h>
 
 typedef uint32_t PID;
-struct ProcessControlBlock;
+struct TaskControlBlock;
 
 /*
  * Returns
@@ -35,7 +35,7 @@ int get_task_state(PID pid);
  *     TASK_STATE_SLEEPING	   3
  */
 void block_task(int reason);
-void unblock_task(volatile struct ProcessControlBlock *task);
+void unblock_task(volatile struct TaskControlBlock *task);
 
 void terminate_task(void);
 

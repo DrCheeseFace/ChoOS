@@ -20,12 +20,12 @@ volatile uint32_t IRQ_disable_counter = 0;
 volatile uint32_t postpone_task_switches_counter = 0;
 volatile uint8_t task_switches_postponed_flag = 0;
 
-volatile struct ProcessControlBlock *current_task_PCB = NULL;
-volatile struct ProcessControlBlock *first_ready_to_run_task = NULL;
-volatile struct ProcessControlBlock *last_ready_to_run_task = NULL;
-volatile struct ProcessControlBlock *dead_tasks = NULL;
+volatile struct TaskControlBlock *current_task_PCB = NULL;
+volatile struct TaskControlBlock *first_ready_to_run_task = NULL;
+volatile struct TaskControlBlock *last_ready_to_run_task = NULL;
+volatile struct TaskControlBlock *dead_tasks = NULL;
 
-internal void free_task(volatile struct ProcessControlBlock *node);
+internal void free_task(volatile struct TaskControlBlock *node);
 internal void mark_task_for_death(void);
 internal void task_start_up(void);
 
@@ -35,7 +35,7 @@ void multitasking_initialize(void)
 
 	__asm__ volatile("cli");
 
-	struct ProcessControlBlock *kernel_task = kmalloc(sizeof(*kernel_task));
+	struct TaskControlBlock *kernel_task = kmalloc(sizeof(*kernel_task));
 	if (!kernel_task) {
 		KERNEL_DEBUG_LOGGER("failed to allocate kernel task");
 		abort("failed to allocate kernel task");
@@ -63,12 +63,12 @@ void multitasking_initialize(void)
 	KERNEL_DEBUG_LOGGER("init multitasking OK");
 }
 
-PID create_kernel_task(void (*func)(void))
+struct TaskControlBlock *create_kernel_task(void (*func)(void))
 {
 	lock_scheduler();
 	current_pid++;
 
-	struct ProcessControlBlock *new_task = kmalloc(sizeof(*new_task));
+	struct TaskControlBlock *new_task = kmalloc(sizeof(*new_task));
 	if (!new_task) {
 		KERNEL_DEBUG_LOGGER("failed to allocate kernel task");
 		abort("failed to allocate kernel task");
@@ -102,16 +102,16 @@ PID create_kernel_task(void (*func)(void))
 	}
 
 	unlock_scheduler();
-	return new_task->id;
+	return new_task;
 }
 
 void dead_tasks_cleanup(void)
 {
 	lock_scheduler();
 
-	volatile struct ProcessControlBlock *node = dead_tasks;
+	volatile struct TaskControlBlock *node = dead_tasks;
 	while (node) {
-		volatile struct ProcessControlBlock *next = node->next;
+		volatile struct TaskControlBlock *next = node->next;
 		free_task(node);
 		node = next;
 	}
@@ -130,8 +130,7 @@ void schedule(void)
 	if (!first_ready_to_run_task)
 		return;
 
-	volatile struct ProcessControlBlock *next_task =
-		first_ready_to_run_task;
+	volatile struct TaskControlBlock *next_task = first_ready_to_run_task;
 	first_ready_to_run_task = next_task->next;
 
 	if (!first_ready_to_run_task) {
@@ -188,7 +187,7 @@ void update_time_used(void)
 	current_task_PCB->time_used += elapsed;
 }
 
-internal void free_task(volatile struct ProcessControlBlock *node)
+internal void free_task(volatile struct TaskControlBlock *node)
 {
 	kfree((void *)(node->stack_base));
 	kfree((void *)node);

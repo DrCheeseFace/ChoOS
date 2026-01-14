@@ -56,17 +56,20 @@ void kernel_main(uint32_t magic, multiboot_info_t *mbd)
 		abort("tests failed");
 	}
 
-	unused uint32_t proc = create_kernel_task(test_sleep);
-	unused uint32_t proc_1 = create_kernel_task(test_sleep1);
+	unused struct TaskControlBlock *proc = create_kernel_task(test_sleep);
+	unused struct TaskControlBlock *proc_1 =
+		create_kernel_task(test_sleep1);
 
-	while (get_task_state(proc) || get_task_state(proc_1)) {
+	while (get_task_state(proc->id) > 0 || get_task_state(proc_1->id) > 0) {
+		lock_scheduler();
 		schedule();
+		unlock_scheduler();
 		__asm__ volatile("hlt");
 	}
 
-	KERNEL_DEBUG_LOG_HEAP_INFO();
-	dead_tasks_cleanup();
-	KERNEL_DEBUG_LOG_HEAP_INFO();
+	// KERNEL_DEBUG_LOG_HEAP_INFO();
+	// dead_tasks_cleanup();
+	// KERNEL_DEBUG_LOG_HEAP_INFO();
 
 	kernel_idle_task();
 }

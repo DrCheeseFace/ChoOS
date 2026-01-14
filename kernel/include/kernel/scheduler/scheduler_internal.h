@@ -11,7 +11,7 @@
 void internal_update_awoken_taskes(unused struct Registers *regs,
 				   uint64_t ticks_since_boot);
 
-extern void _switch_to_task(volatile struct ProcessControlBlock *next);
+extern void _switch_to_task(volatile struct TaskControlBlock *next);
 
 uint32_t _forge_kernel_stack(uint32_t stack_top, void (*task)(void),
 			     void (*task_start_up)(void),

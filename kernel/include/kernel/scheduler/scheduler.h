@@ -13,18 +13,18 @@
 #include <stdint.h>
 
 // current task, task control block
-extern volatile struct ProcessControlBlock *current_task_PCB;
-extern volatile struct ProcessControlBlock *first_ready_to_run_task;
-extern volatile struct ProcessControlBlock *last_ready_to_run_task;
-extern volatile struct ProcessControlBlock *dead_tasks;
+extern volatile struct TaskControlBlock *current_task_PCB;
+extern volatile struct TaskControlBlock *first_ready_to_run_task;
+extern volatile struct TaskControlBlock *last_ready_to_run_task;
+extern volatile struct TaskControlBlock *dead_tasks;
 
-struct ProcessControlBlock {
+struct TaskControlBlock {
 	PID id;
 	uint32_t esp;
 	uint32_t esp0;
 	uint32_t cr3;
-	volatile struct ProcessControlBlock *next;
-	uint8_t state;
+	volatile struct TaskControlBlock *next;
+	int state;
 	uint64_t time_used;
 	void *stack_base;
 	uint64_t target_wakeup_time;
@@ -32,7 +32,7 @@ struct ProcessControlBlock {
 
 void multitasking_initialize(void);
 
-PID create_kernel_task(void (*func)(void));
+struct TaskControlBlock *create_kernel_task(void (*func)(void));
 
 void schedule(void);
 void lock_scheduler(void);

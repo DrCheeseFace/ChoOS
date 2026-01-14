@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 // sleeping tasks
-extern volatile struct ProcessControlBlock *sleeping_taskes;
+extern volatile struct TaskControlBlock *sleeping_taskes;
 
 // sleep until read_ticks_since_boot();
 void micro_sleep_until(uint32_t micro_seconds);

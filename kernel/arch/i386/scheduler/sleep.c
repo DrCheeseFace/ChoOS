@@ -8,7 +8,7 @@
 
 #include <stdint.h>
 
-volatile struct ProcessControlBlock *sleeping_taskes = NULL;
+volatile struct TaskControlBlock *sleeping_taskes = NULL;
 
 void micro_sleep_until(uint32_t micro_seconds)
 {
@@ -38,11 +38,11 @@ void internal_update_awoken_taskes(unused struct Registers *regs,
 {
 	lock_scheduler();
 
-	volatile struct ProcessControlBlock *curr = sleeping_taskes;
-	volatile struct ProcessControlBlock *prev = NULL;
+	volatile struct TaskControlBlock *curr = sleeping_taskes;
+	volatile struct TaskControlBlock *prev = NULL;
 
 	while (curr) {
-		volatile struct ProcessControlBlock *next = curr->next;
+		volatile struct TaskControlBlock *next = curr->next;
 
 		if (curr->target_wakeup_time <= ticks_since_boot) {
 			if (prev == NULL) {

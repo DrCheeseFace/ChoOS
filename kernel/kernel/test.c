@@ -214,10 +214,10 @@ internal int test_multitasking_scheduler(void)
 {
 	kernel_test_logger("TEST: multitasking schedule & locks");
 
-	uint32_t pid1 = create_kernel_task(long_task);
-	uint32_t pid2 = create_kernel_task(long_task);
+	struct TaskControlBlock *pid1 = create_kernel_task(long_task);
+	struct TaskControlBlock *pid2 = create_kernel_task(long_task);
 
-	kernel_test_logger("created test task %d and %d", pid1, pid2);
+	kernel_test_logger("created test task %d and %d", pid1->id, pid2->id);
 
 	ASSERT_MSG(IRQ_disable_counter == 0,
 		   "interrupts should be enabled here");
@@ -228,7 +228,7 @@ internal int test_multitasking_scheduler(void)
 	schedule();
 	unlock_scheduler();
 
-	while (get_task_state(pid1) || get_task_state(pid2)) {
+	while (get_task_state(pid1->id) > 0 || get_task_state(pid2->id) > 0) {
 		lock_scheduler();
 
 		ASSERT_MSG(IRQ_disable_counter != 0,
